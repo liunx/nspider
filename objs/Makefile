@@ -22,11 +22,13 @@ CORE_INCS = -I src/core \
 objs/nspider: objs/src/core/nspider.o \
     objs/src/core/nspr_log.o \
     objs/src/event/nspr_event.o \
+    objs/src/event/modules/nspr_select.o \
     objs/nspr_modules.o
 	$(LINK) -o objs/nspider \
 	    objs/src/core/nspider.o \
 	    objs/src/core/nspr_log.o \
 	    objs/src/event/nspr_event.o \
+	    objs/src/event/modules/nspr_select.o \
 	    objs/nspr_modules.o
 
 objs/src/core/nspider.o: $(CORE_DEPS) \
@@ -47,6 +49,12 @@ objs/src/event/nspr_event.o: $(CORE_DEPS) \
 	    -o objs/src/event/nspr_event.o \
 	    src/event/nspr_event.c
 
+objs/src/event/modules/nspr_select.o: $(CORE_DEPS) \
+    src/event/modules/nspr_select.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/event/modules/nspr_select.o \
+	    src/event/modules/nspr_select.c
+
 objs/nspr_modules.o: $(CORE_DEPS) \
     objs/nspr_modules.c
 	$(CC) -c $(CFLAGS) $(CORE_INCS) \
@@ -57,4 +65,6 @@ clean:
 	rm -rf objs/nspider \
 	    objs/nspr_modules.o \
 	    objs/src/core/nspider.o \
-	    objs/src/core/nspr_log.o
+	    objs/src/core/nspr_log.o \
+	    objs/src/event/nspr_event.o \
+	    objs/src/event/modules/nspr_select.o

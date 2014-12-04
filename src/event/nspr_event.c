@@ -3,16 +3,19 @@
  */
 #include <nspr_event.h>
 
-void nspr_event_handler(void)
+void nspr_event_process(void)
 {
     for(;;) {
-        // do works
+        // TODO add event
+	// TODO handle event
+	// TODO clear event
     }
 }
 
 int nspr_event_init(void)
 {
-    nspr_handler = nspr_event_handler;
+    nspr_nspider_process = nspr_event_process;
+    nspr_event_handler.init(1000);
     return NSPR_OK;
 }
 

@@ -3,23 +3,8 @@
  */
 #include <nspider.h>
 
-void (*nspr_handler)(void);
+void (*nspr_nspider_process)(void);
 int (*nspr_log_error)(const char *, ...);
-
-/*
- * we use xxx_null function to avoid null pointer
- * of extern variables we export
- */
-int nspr_log_error_null(const char *format, ...)
-{
-    // do nothing
-    return NSPR_OK;
-}
-
-void nspr_handler_null(void)
-{
-    // do nothing
-}
 
 static int nspr_option_show_help = 0;
 static int nspr_option_show_version = 0;
@@ -101,11 +86,6 @@ static void nspr_modules_exit(void)
 
 int main(int argc, char *const *argv)
 {
-    if (nspr_log_error == NULL)
-        nspr_log_error = nspr_log_error_null;
-    if (nspr_handler == NULL)
-        nspr_handler = nspr_handler_null;
-
     // do log init, we need it to show something not expected
     if (nspr_log_init() != NSPR_OK) {
         return 1;
@@ -139,7 +119,7 @@ int main(int argc, char *const *argv)
         return 1;
     }
     // TODO do handling works
-        (void) nspr_handler();
+        (void) nspr_nspider_process();
     // TODO do exiting works
     nspr_modules_exit();
     return 0;
