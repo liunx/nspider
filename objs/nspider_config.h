@@ -1,0 +1,8 @@
+#ifndef _NSPIDER_CONFIG_H_INCLUDED_
+#define _NSPIDER_CONFIG_H_INCLUDED_
+
+#ifndef NSPR_HAVE_OS_LINUX
+#define NSPR_HAVE_OS_LINUX  1
+#endif
+
+#endif /* _NSPIDER_CONFIG_H_INCLUDED_ */

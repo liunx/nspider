@@ -3,6 +3,9 @@
  */
 #include <nspider.h>
 
+void (*snpr_handler)(void);
+int (*nspr_log_error)(const char *, ...);
+
 /*
  * XXX: the code come from nginx.c:ngx_get_options
  */
@@ -129,8 +132,60 @@ static int nspr_get_options(int argc, char *const *argv)
 }
 #endif
 
+static int nspr_log_init(void)
+{
+    int i;
+    int ret = NSPR_ERROR;
+    for (i = 0; nspr_nspider_modules[i]; i++) {
+        if (nspr_nspider_modules[i]->id == NSPR_ID_LOG) {
+            ret = nspr_nspider_modules[i]->init();
+            break;
+        }
+    }
+    return ret;
+}
+
+static int nspr_modules_init(void)
+{
+    int i;
+    int ret = NSPR_ERROR;
+    for (i = 0; nspr_nspider_modules[i]; i++) {
+        if (nspr_nspider_modules[i]->init) {
+            ret = nspr_nspider_modules[i]->init();
+            if (ret != NSPR_OK)
+                break;
+        }
+    }
+    return ret;
+}
+
+static void nspr_modules_exit(void)
+{
+    int i;
+    for (i = 0; nspr_nspider_modules[i]; i++) {
+        if (nspr_nspider_modules[i]->exit) {
+            nspr_nspider_modules[i]->exit();
+        }
+    }
+}
+
 int main(int argc, char *const *argv)
 {
-    // TODO do basic init
+    // TODO do log init, we need it to show something not expected
+    if (nspr_log_init() != NSPR_OK) {
+        return 1;
+    }
+    nspr_log_error("hello from nspider!\n");
+    // TODO get options
+    // TODO do initing works
+    if (nspr_modules_init() != NSPR_OK) {
+        nspr_log_error("modules init failed!\n");
+        return 1;
+    }
+    // TODO do handling works
+    if (snpr_handler)
+        (void) snpr_handler();
+    // TODO do exiting works
+    nspr_modules_exit();
     return 0;
 }
