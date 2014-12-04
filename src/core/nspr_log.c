@@ -5,7 +5,9 @@
 
 int nspr_log_init(void)
 {
+#ifdef NSPR_HAVE_OS_LINUX
     nspr_log_error = printf;
+#endif
     return NSPR_OK;
 }
 

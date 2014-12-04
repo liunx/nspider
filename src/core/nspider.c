@@ -3,13 +3,29 @@
  */
 #include <nspider.h>
 
-void (*snpr_handler)(void);
+void (*nspr_handler)(void);
 int (*nspr_log_error)(const char *, ...);
 
 /*
- * XXX: the code come from nginx.c:ngx_get_options
+ * we use xxx_null function to avoid null pointer
+ * of extern variables we export
  */
-#if 0
+int nspr_log_error_null(const char *format, ...)
+{
+    // do nothing
+    return NSPR_OK;
+}
+
+void nspr_handler_null(void)
+{
+    // do nothing
+}
+
+static int nspr_option_show_help = 0;
+static int nspr_option_show_version = 0;
+/*
+ * XXX: the code come from [nginx.c:ngx_get_options]
+ */
 static int nspr_get_options(int argc, char *const *argv)
 {
     unsigned char  *p;
@@ -20,117 +36,31 @@ static int nspr_get_options(int argc, char *const *argv)
         p = (unsigned char *) argv[i];
 
         if (*p++ != '-') {
-            ngx_log_stderr(0, "invalid option: \"%s\"", argv[i]);
-            return NGX_ERROR;
+            nspr_log_error("invalid option: \"%s\"", argv[i]);
+            return NSPR_ERROR;
         }
 
         while (*p) {
-
             switch (*p++) {
-
             case '?':
             case 'h':
-                ngx_show_version = 1;
-                ngx_show_help = 1;
+                nspr_option_show_help = 1;
                 break;
-
-            case 'v':
-                ngx_show_version = 1;
-                break;
-
             case 'V':
-                ngx_show_version = 1;
-                ngx_show_configure = 1;
+            case 'v':
+                nspr_option_show_version = 1;
                 break;
-
-            case 't':
-                ngx_test_config = 1;
-                break;
-
-            case 'q':
-                ngx_quiet_mode = 1;
-                break;
-
-            case 'p':
-                if (*p) {
-                    ngx_prefix = p;
-                    goto next;
-                }
-
-                if (argv[++i]) {
-                    ngx_prefix = (u_char *) argv[i];
-                    goto next;
-                }
-
-                ngx_log_stderr(0, "option \"-p\" requires directory name");
-                return NGX_ERROR;
-
-            case 'c':
-                if (*p) {
-                    ngx_conf_file = p;
-                    goto next;
-                }
-
-                if (argv[++i]) {
-                    ngx_conf_file = (u_char *) argv[i];
-                    goto next;
-                }
-
-                ngx_log_stderr(0, "option \"-c\" requires file name");
-                return NGX_ERROR;
-
-            case 'g':
-                if (*p) {
-                    ngx_conf_params = p;
-                    goto next;
-                }
-
-                if (argv[++i]) {
-                    ngx_conf_params = (u_char *) argv[i];
-                    goto next;
-                }
-
-                ngx_log_stderr(0, "option \"-g\" requires parameter");
-                return NGX_ERROR;
-
-            case 's':
-                if (*p) {
-                    ngx_signal = (char *) p;
-
-                } else if (argv[++i]) {
-                    ngx_signal = argv[i];
-
-                } else {
-                    ngx_log_stderr(0, "option \"-s\" requires parameter");
-                    return NGX_ERROR;
-                }
-
-                if (ngx_strcmp(ngx_signal, "stop") == 0
-                    || ngx_strcmp(ngx_signal, "quit") == 0
-                    || ngx_strcmp(ngx_signal, "reopen") == 0
-                    || ngx_strcmp(ngx_signal, "reload") == 0)
-                {
-                    ngx_process = NGX_PROCESS_SIGNALLER;
-                    goto next;
-                }
-
-                ngx_log_stderr(0, "invalid option: \"-s %s\"", ngx_signal);
-                return NGX_ERROR;
-
             default:
-                ngx_log_stderr(0, "invalid option: \"%c\"", *(p - 1));
-                return NGX_ERROR;
+                nspr_log_error("invalid option: \"%c\"\n", *(p - 1));
+                return NSPR_ERROR;
             }
         }
-
-    next:
 
         continue;
     }
 
     return NSPR_OK;
 }
-#endif
 
 static int nspr_log_init(void)
 {
@@ -171,20 +101,45 @@ static void nspr_modules_exit(void)
 
 int main(int argc, char *const *argv)
 {
-    // TODO do log init, we need it to show something not expected
+    if (nspr_log_error == NULL)
+        nspr_log_error = nspr_log_error_null;
+    if (nspr_handler == NULL)
+        nspr_handler = nspr_handler_null;
+
+    // do log init, we need it to show something not expected
     if (nspr_log_init() != NSPR_OK) {
         return 1;
     }
-    nspr_log_error("hello from nspider!\n");
-    // TODO get options
+
+    if (nspr_get_options(argc, argv) != NSPR_OK)
+        return 1;
+
+    if (nspr_option_show_help == 1) {
+        nspr_log_error(
+                "nspider version: nspider/0.1.0\n"
+                "Usage: nspider [-?hvV]\n\n"
+                "Options:\n"
+                "-?,-h          : this help\n"
+                "-v             : show version and exit\n"
+                "-V             : show version and exit\n"
+                );
+        return 1;
+    }
+
+    if (nspr_option_show_version == 1) {
+        nspr_log_error(
+                "nspider version: nspider/0.1.0\n"
+                );
+        return 1;
+    }
+
     // TODO do initing works
     if (nspr_modules_init() != NSPR_OK) {
         nspr_log_error("modules init failed!\n");
         return 1;
     }
     // TODO do handling works
-    if (snpr_handler)
-        (void) snpr_handler();
+        (void) nspr_handler();
     // TODO do exiting works
     nspr_modules_exit();
     return 0;

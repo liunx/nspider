@@ -12,7 +12,7 @@ struct nspr_nspider_s {
 typedef struct nspr_nspider_s nspr_nspider_t;
 
 // we'll provide work to others
-extern void (*snpr_handler)(void);
+extern void (*nspr_handler)(void);
 extern int (*nspr_log_error)(const char *, ...);
 extern nspr_nspider_t  *nspr_nspider_modules[];
 
