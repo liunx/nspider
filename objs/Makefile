@@ -3,32 +3,56 @@ CFLAGS =  -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g
 LINK =	$(CC)
 
 ALL_INCS = -I src/core \
-	-I src/event \
-	-I src/os \
-	-I src/common \
-	-I objs
+	   -I src/event \
+	   -I src/os \
+	   -I src/common \
+	   -I src/thirdparts/list/src \
+	   -I src/thirdparts/http-parser \
+	   -I src/thirdparts/hash \
+	   -I src/thirdparts/json \
+	   -I objs
 
 CORE_DEPS = src/core/nspider.h \
 	    src/event/nspr_event.h \
 	    src/os/nspr_linux.h \
-	    src/common/nspr_common.h
+	    src/common/nspr_common.h \
+	    src/thirdparts/list/src/list.h \
+	    src/thirdparts/http-parser/http_parser.h \
+	    src/thirdparts/hash/hash.h \
+	    src/thirdparts/json/json.h \
 
 CORE_INCS = -I src/core \
 	    -I src/event \
 	    -I src/os \
 	    -I src/common \
+	    -I src/thirdparts/list/src \
+	    -I src/thirdparts/http-parser \
+	    -I src/thirdparts/hash \
+	    -I src/thirdparts/json \
 	    -I objs
 
 objs/nspider: objs/src/core/nspider.o \
     objs/src/core/nspr_log.o \
     objs/src/event/nspr_event.o \
     objs/src/event/modules/nspr_select.o \
+    objs/src/thirdparts/list/list.o \
+    objs/src/thirdparts/list/list_node.o \
+    objs/src/thirdparts/list/list_iterator.o \
+    objs/src/thirdparts/http-parser/http_parser.o \
+    objs/src/thirdparts/hash/hash.o \
+    objs/src/thirdparts/json/json.o \
     objs/nspr_modules.o
 	$(LINK) -o objs/nspider \
 	    objs/src/core/nspider.o \
 	    objs/src/core/nspr_log.o \
 	    objs/src/event/nspr_event.o \
 	    objs/src/event/modules/nspr_select.o \
+	    objs/src/thirdparts/list/list.o \
+	    objs/src/thirdparts/list/list_node.o \
+	    objs/src/thirdparts/list/list_iterator.o \
+	    objs/src/thirdparts/http-parser/http_parser.o \
+	    objs/src/thirdparts/hash/hash.o \
+	    objs/src/thirdparts/json/json.o \
 	    objs/nspr_modules.o
 
 objs/src/core/nspider.o: $(CORE_DEPS) \
@@ -55,6 +79,42 @@ objs/src/event/modules/nspr_select.o: $(CORE_DEPS) \
 	    -o objs/src/event/modules/nspr_select.o \
 	    src/event/modules/nspr_select.c
 
+objs/src/thirdparts/list/list.o: $(CORE_DEPS) \
+    src/thirdparts/list/src/list.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/thirdparts/list/list.o \
+	    src/thirdparts/list/src/list.c \
+
+objs/src/thirdparts/list/list_node.o: $(CORE_DEPS) \
+    src/thirdparts/list/src/list_node.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/thirdparts/list/list_node.o \
+	    src/thirdparts/list/src/list_node.c \
+
+objs/src/thirdparts/list/list_iterator.o: $(CORE_DEPS) \
+    src/thirdparts/list/src/list_iterator.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/thirdparts/list/list_iterator.o \
+	    src/thirdparts/list/src/list_iterator.c \
+
+objs/src/thirdparts/http-parser/http_parser.o: $(CORE_DEPS) \
+    src/thirdparts/http-parser/http_parser.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/thirdparts/http-parser/http_parser.o \
+	    src/thirdparts/http-parser/http_parser.c
+
+objs/src/thirdparts/json/json.o: $(CORE_DEPS) \
+    src/thirdparts/json/json.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/thirdparts/json/json.o \
+	    src/thirdparts/json/json.c
+
+objs/src/thirdparts/hash/hash.o: $(CORE_DEPS) \
+    src/thirdparts/hash/hash.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/thirdparts/hash/hash.o \
+	    src/thirdparts/hash/hash.c
+
 objs/nspr_modules.o: $(CORE_DEPS) \
     objs/nspr_modules.c
 	$(CC) -c $(CFLAGS) $(CORE_INCS) \
@@ -67,4 +127,10 @@ clean:
 	    objs/src/core/nspider.o \
 	    objs/src/core/nspr_log.o \
 	    objs/src/event/nspr_event.o \
+	    objs/src/thirdparts/list/list.o \
+	    objs/src/thirdparts/list/list_node.o \
+	    objs/src/thirdparts/list/list_iterator.o \
+	    objs/src/thirdparts/http-parser/http_parser.o \
+	    objs/src/thirdparts/hash/hash.o \
+	    objs/src/thirdparts/json/json.o \
 	    objs/src/event/modules/nspr_select.o
