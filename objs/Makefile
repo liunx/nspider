@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS =  -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g 
+CFLAGS =  -pipe -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g 
 LINK =	$(CC)
 
 ALL_INCS = -I src/core \
@@ -13,6 +13,8 @@ ALL_INCS = -I src/core \
 	   -I objs
 
 CORE_DEPS = src/core/nspider.h \
+	    src/core/nspr_log.h \
+	    src/core/nspr_mem.h \
 	    src/event/nspr_event.h \
 	    src/os/nspr_linux.h \
 	    src/common/nspr_common.h \
@@ -33,6 +35,7 @@ CORE_INCS = -I src/core \
 
 objs/nspider: objs/src/core/nspider.o \
     objs/src/core/nspr_log.o \
+    objs/src/core/nspr_mem.o \
     objs/src/event/nspr_event.o \
     objs/src/event/modules/nspr_select.o \
     objs/src/thirdparts/list/list.o \
@@ -45,6 +48,7 @@ objs/nspider: objs/src/core/nspider.o \
 	$(LINK) -o objs/nspider \
 	    objs/src/core/nspider.o \
 	    objs/src/core/nspr_log.o \
+	    objs/src/core/nspr_mem.o \
 	    objs/src/event/nspr_event.o \
 	    objs/src/event/modules/nspr_select.o \
 	    objs/src/thirdparts/list/list.o \
@@ -66,6 +70,12 @@ objs/src/core/nspr_log.o: $(CORE_DEPS) \
 	$(CC) -c $(CFLAGS) $(CORE_INCS) \
 	    -o objs/src/core/nspr_log.o \
 	    src/core/nspr_log.c
+
+objs/src/core/nspr_mem.o: $(CORE_DEPS) \
+    src/core/nspr_mem.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/core/nspr_mem.o \
+	    src/core/nspr_mem.c
 
 objs/src/event/nspr_event.o: $(CORE_DEPS) \
     src/event/nspr_event.c
@@ -126,6 +136,7 @@ clean:
 	    objs/nspr_modules.o \
 	    objs/src/core/nspider.o \
 	    objs/src/core/nspr_log.o \
+	    objs/src/core/nspr_mem.o \
 	    objs/src/event/nspr_event.o \
 	    objs/src/thirdparts/list/list.o \
 	    objs/src/thirdparts/list/list_node.o \

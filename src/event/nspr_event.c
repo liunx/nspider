@@ -5,10 +5,12 @@
 
 void nspr_event_process(void)
 {
+    int ret;
     for(;;) {
-        // TODO add event
-	// TODO handle event
-	// TODO clear event
+        ret = (int) nspr_event_handler.process_events(100);
+        if (ret != NSPR_OK) {
+            break;
+        }
     }
 }
 

@@ -33,6 +33,7 @@
 struct nspr_event_node_fd_s {
     int fd;
     int event_type;
+    unsigned int index;
     // handlers
     void (*read)(struct nspr_event_node_fd_s *);
     void (*write)(struct nspr_event_node_fd_s *);
@@ -41,10 +42,12 @@ struct nspr_event_node_fd_s {
 };
 typedef struct nspr_event_node_fd_s nspr_event_node_fd_t;
 
+#define NSPR_INVALID_EVENT_FD_INDEX         0xd0d0d0d0
+
 struct nspr_event_handler_s {
     int (*init)(int );
     int (*add)(nspr_event_node_fd_t *);
-    void (*process_events)(int );
+    int (*process_events)(int );
     int (*del)(nspr_event_node_fd_t *);
     void (*exit)(void);
     void *data;

@@ -5,4 +5,8 @@
 #define NSPR_HAVE_OS_LINUX  1
 #endif
 
+#ifndef NSPR_EVENT_FDS_SIZE
+#define NSPR_EVENT_FDS_SIZE  1024
+#endif
+
 #endif /* _NSPIDER_CONFIG_H_INCLUDED_ */
