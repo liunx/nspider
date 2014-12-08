@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS =  -pipe -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g 
+CFLAGS =  -pipe -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g
 LINK =	$(CC)
 
 ALL_INCS = -I src/core \
@@ -10,6 +10,7 @@ ALL_INCS = -I src/core \
 	   -I src/thirdparts/http-parser \
 	   -I src/thirdparts/hash \
 	   -I src/thirdparts/json \
+	   -I src/luapi \
 	   -I objs
 
 CORE_DEPS = src/core/nspider.h \
@@ -22,6 +23,7 @@ CORE_DEPS = src/core/nspider.h \
 	    src/thirdparts/http-parser/http_parser.h \
 	    src/thirdparts/hash/hash.h \
 	    src/thirdparts/json/json.h \
+	    src/luapi/luapi.h \
 
 CORE_INCS = -I src/core \
 	    -I src/event \
@@ -31,6 +33,7 @@ CORE_INCS = -I src/core \
 	    -I src/thirdparts/http-parser \
 	    -I src/thirdparts/hash \
 	    -I src/thirdparts/json \
+	    -I src/luapi \
 	    -I objs
 
 objs/nspider: objs/src/core/nspider.o \
@@ -44,6 +47,7 @@ objs/nspider: objs/src/core/nspider.o \
     objs/src/thirdparts/http-parser/http_parser.o \
     objs/src/thirdparts/hash/hash.o \
     objs/src/thirdparts/json/json.o \
+    objs/src/luapi/luapi.o \
     objs/nspr_modules.o
 	$(LINK) -o objs/nspider \
 	    objs/src/core/nspider.o \
@@ -57,7 +61,8 @@ objs/nspider: objs/src/core/nspider.o \
 	    objs/src/thirdparts/http-parser/http_parser.o \
 	    objs/src/thirdparts/hash/hash.o \
 	    objs/src/thirdparts/json/json.o \
-	    objs/nspr_modules.o
+	    objs/src/luapi/luapi.o \
+	    objs/nspr_modules.o -llua5.2
 
 objs/src/core/nspider.o: $(CORE_DEPS) \
     src/core/nspider.c
@@ -125,6 +130,12 @@ objs/src/thirdparts/hash/hash.o: $(CORE_DEPS) \
 	    -o objs/src/thirdparts/hash/hash.o \
 	    src/thirdparts/hash/hash.c
 
+objs/src/luapi/luapi.o: $(CORE_DEPS) $(LIBLUA_INCS) \
+    src/luapi/luapi.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) -I$(LIBLUA_INCS) \
+	    -o objs/src/luapi/luapi.o \
+	    src/luapi/luapi.c
+
 objs/nspr_modules.o: $(CORE_DEPS) \
     objs/nspr_modules.c
 	$(CC) -c $(CFLAGS) $(CORE_INCS) \
@@ -144,4 +155,5 @@ clean:
 	    objs/src/thirdparts/http-parser/http_parser.o \
 	    objs/src/thirdparts/hash/hash.o \
 	    objs/src/thirdparts/json/json.o \
+	    objs/src/luapi/luapio \
 	    objs/src/event/modules/nspr_select.o

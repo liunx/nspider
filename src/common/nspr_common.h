@@ -15,5 +15,6 @@
 
 #define NSPR_ID_LOG         0x1000
 #define NSPR_ID_EVENT       0x1001
+#define NSPR_ID_LUAPI       0x1002
 
 #endif /* _NSPR_COMMON_H_INCLUDED_ */

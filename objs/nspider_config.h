@@ -9,4 +9,8 @@
 #define NSPR_EVENT_FDS_SIZE  1024
 #endif
 
+#ifndef NSPR_HAVE_DEBUG
+#define NSPR_HAVE_DEBUG 1
+#endif
+
 #endif /* _NSPIDER_CONFIG_H_INCLUDED_ */

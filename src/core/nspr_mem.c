@@ -18,7 +18,7 @@ void *nspr_calloc(size_t nmemb, size_t size)
     return calloc(nmemb, size);
 }
 
-void *realloc(void *ptr, size_t size)
+void *nspr_realloc(void *ptr, size_t size)
 {
     return realloc(ptr, size);
 }
