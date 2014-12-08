@@ -75,6 +75,7 @@ static void nspr_select_exit(void)
 
 static void nspr_select_process_events(int tmsec)
 {
+    // FIXME add timer
 }
 
 nspr_event_handler_t nspr_event_handler = {
