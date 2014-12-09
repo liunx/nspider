@@ -100,24 +100,41 @@ nspr_nspider_t nspr_luapi = {
  */
 static void luapi_event_api_read(nspr_event_node_fd_t *node)
 {
-    lua_getglobal(L, "onread");
+    lua_getglobal(L, "event_read");
     if (!lua_isfunction(L, -1)) {
-        nspr_bail(L, "onread is not a function!");
+        nspr_bail(L, "event_read is not a function!");
         return;
     }
     lua_pushlightuserdata(L, node);
     if (lua_pcall(L, 1, 0, 0) != 0) {
-        nspr_bail(L, "get default gw address failed");
         return;
     }
 }
 
 static void luapi_event_api_write(nspr_event_node_fd_t *node)
 {
+    lua_getglobal(L, "event_write");
+    if (!lua_isfunction(L, -1)) {
+        nspr_bail(L, "event_write is not a function!");
+        return;
+    }
+    lua_pushlightuserdata(L, node);
+    if (lua_pcall(L, 1, 0, 0) != 0) {
+        return;
+    }
 }
 
 static void luapi_event_api_error(nspr_event_node_fd_t *node)
 {
+    lua_getglobal(L, "event_error");
+    if (!lua_isfunction(L, -1)) {
+        nspr_bail(L, "event_error is not a function!");
+        return;
+    }
+    lua_pushlightuserdata(L, node);
+    if (lua_pcall(L, 1, 0, 0) != 0) {
+        return;
+    }
 }
 
 static int nspr_luapi_event_new(lua_State *L) {
@@ -172,3 +189,21 @@ static void nspr_luapi_event_api(lua_State *L) {
 }
 
 // XXX luapi_event_api --> END
+
+// XXX luapi_inet_api --> BEGIN
+#if 0
+static int nspr_luapi_inet_api_listen(lua_State *L) {
+    return 1;
+}
+
+static void nspr_luapi_inet_api(lua_State *L) {
+    lua_pushliteral(L, "inet");
+    lua_newtable(L);    /*  .inet table aka {} */
+
+
+    lua_createtable(L, 0 /* narr */, 2 /* nrec */);    /*  the metatable */
+    lua_setmetatable(L, -2);    /*  tie the metatable to param table */
+    lua_rawset(L, -3);    /*  set nspr.inet table */
+}
+#endif
+// XXX luapi_inet_api --> END

@@ -7,6 +7,7 @@
 #include <nspr_event.h>
 #include <nspr_log.h>
 #include <nspr_mem.h>
+#include <nspr_inet.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>

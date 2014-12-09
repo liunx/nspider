@@ -5,26 +5,34 @@
 -- print(nspr.debug.debug_arg0())
 event = nspr.event
 ev = event.new()
-print(ev)
+--print(ev)
 event.init(ev, 1, 0)
 event.add(ev)
+
+--[[
+a = {}
+a[ev] = {a = 1, b = 2, c = 3}
+print(a)
+print(a[ev]['a'])
+--]]
+files = {}
+files[ev] = {fd = 1, type = 'file', name = 'stdin'}
 
 --
 -- we'll register our handlers
 --
-function onread(event)
-    print(type(event))
+function event_read(event)
     nspr.event.del(event)
 end
 
-function onwrite(event)
+function event_write(event)
 end
 
-function onerror(event)
+function event_error(event)
 end
 
-function ontimer(event)
+function event_timer(event)
 end
 
-function onsignal(event)
+function event_signal(event)
 end

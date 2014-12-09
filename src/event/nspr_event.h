@@ -57,6 +57,6 @@ typedef struct nspr_event_handler_s nspr_event_handler_t;
 extern nspr_event_handler_t nspr_event_handler;
 
 #define nspr_event_add nspr_event_handler.add
-#define nspr_event_del nspr_event_handler.add
+#define nspr_event_del nspr_event_handler.del
 
 #endif /* _NSPR_EVENT_H_INCLUDED_ */
