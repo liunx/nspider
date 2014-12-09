@@ -23,6 +23,7 @@ int nspr_event_init(void)
 
 void nspr_event_exit(void)
 {
+    nspr_event_handler.exit();
 }
 
 nspr_nspider_t nspr_event = {
