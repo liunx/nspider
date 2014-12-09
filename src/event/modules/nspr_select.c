@@ -46,7 +46,7 @@ static int nspr_select_add(nspr_event_node_fd_t *node_fd)
             nspr_log_error("Unkown event type %d\n", node_fd->event_type);
             return NSPR_EUNDEF;
     }
-    if (max_fd != -1 && max_fd < node_fd->fd) {
+    if (max_fd < node_fd->fd) {
         max_fd = node_fd->fd;
     }
     event_node_fds[nevents] = node_fd;
@@ -132,11 +132,17 @@ static int nspr_select_process_events(int tmsec)
 
         if (node_fd->event_type == NSPR_EVENT_TYPE_READ) {
             if (FD_ISSET(node_fd->fd, &read_fd_set)) {
+                if (node_fd->read) {
+                    node_fd->read(node_fd);
+                }
                 found = 1;
             }
         }
         else if (node_fd->event_type == NSPR_EVENT_TYPE_WRITE) {
             if (FD_ISSET(node_fd->fd, &write_fd_set)) {
+                if (node_fd->write) {
+                    node_fd->write(node_fd);
+                }
                 found = 1;
             }
         }

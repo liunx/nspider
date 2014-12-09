@@ -6,18 +6,18 @@
 static lua_State *L;
 static void nspr_luapi_event_api(lua_State *L);
 
-static void bail(lua_State *L, char *msg) {
+static void nspr_bail(lua_State *L, char *msg) {
     nspr_log_error("\nFATAL ERROR:\n  %s: %s\n\n", msg, lua_tostring(L, -1));
 }
 
 static int nspr_luapi_loadfile(lua_State *L) {
     if (luaL_loadfile(L, "work.lua")) {
-        bail(L, "luaL_loadfile() failed");
+        nspr_bail(L, "luaL_loadfile() failed");
         return NSPR_ERROR;
     }
 
     if (lua_pcall(L, 0, 0, 0)) {
-        bail(L, "lua_pcall() failed");
+        nspr_bail(L, "lua_pcall() failed");
         return NSPR_ERROR;
     }
 
@@ -95,6 +95,31 @@ nspr_nspider_t nspr_luapi = {
 };
 
 // XXX luapi_event_api --> BEGIN
+/*
+ * event_api calling lua function from C
+ */
+static void luapi_event_api_read(nspr_event_node_fd_t *node)
+{
+    lua_getglobal(L, "onread");
+    if (!lua_isfunction(L, -1)) {
+        nspr_bail(L, "onread is not a function!");
+        return;
+    }
+    lua_pushlightuserdata(L, node);
+    if (lua_pcall(L, 1, 0, 0) != 0) {
+        nspr_bail(L, "get default gw address failed");
+        return;
+    }
+}
+
+static void luapi_event_api_write(nspr_event_node_fd_t *node)
+{
+}
+
+static void luapi_event_api_error(nspr_event_node_fd_t *node)
+{
+}
+
 static int nspr_luapi_event_new(lua_State *L) {
     nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_newuserdata(L, sizeof(nspr_event_node_fd_t));
     if (node == NULL) {
@@ -110,6 +135,9 @@ static int nspr_luapi_event_init(lua_State *L) {
     int event_type = lua_tonumber(L, 3);
     node->fd = fd;
     node->event_type = event_type;
+    node->read = luapi_event_api_read;
+    node->write = luapi_event_api_write;
+    node->error = luapi_event_api_error;
     return 0;
 }
 
@@ -120,7 +148,7 @@ static int nspr_luapi_event_add(lua_State *L) {
 }
 
 static int nspr_luapi_event_del(lua_State *L) {
-    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_touserdata(L, 1);
+    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_topointer(L, 1);
     nspr_event_del(node);
     return 0;
 }
