@@ -16,12 +16,15 @@ print(a)
 print(a[ev]['a'])
 --]]
 files = {}
-files[ev] = {fd = 1, type = 'file', name = 'stdin'}
+files[1] = ev
 
 --
 -- we'll register our handlers
 --
 function event_read(event)
+    -- get event.fd
+    local fd = nspr.event.getfd(event)
+    print(fd, files[fd])
     nspr.event.del(event)
 end
 

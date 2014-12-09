@@ -98,7 +98,7 @@ nspr_nspider_t nspr_luapi = {
 /*
  * event_api calling lua function from C
  */
-static void luapi_event_api_read(nspr_event_node_fd_t *node)
+static void nspr_luapi_event_api_read(nspr_event_node_fd_t *node)
 {
     lua_getglobal(L, "event_read");
     if (!lua_isfunction(L, -1)) {
@@ -111,7 +111,7 @@ static void luapi_event_api_read(nspr_event_node_fd_t *node)
     }
 }
 
-static void luapi_event_api_write(nspr_event_node_fd_t *node)
+static void nspr_luapi_event_api_write(nspr_event_node_fd_t *node)
 {
     lua_getglobal(L, "event_write");
     if (!lua_isfunction(L, -1)) {
@@ -124,7 +124,7 @@ static void luapi_event_api_write(nspr_event_node_fd_t *node)
     }
 }
 
-static void luapi_event_api_error(nspr_event_node_fd_t *node)
+static void nspr_luapi_event_api_error(nspr_event_node_fd_t *node)
 {
     lua_getglobal(L, "event_error");
     if (!lua_isfunction(L, -1)) {
@@ -135,6 +135,12 @@ static void luapi_event_api_error(nspr_event_node_fd_t *node)
     if (lua_pcall(L, 1, 0, 0) != 0) {
         return;
     }
+}
+
+static int nspr_luapi_event_api_utils_getfd(lua_State *L) {
+    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_topointer(L, 1);
+    lua_pushnumber(L, node->fd);
+    return 1;
 }
 
 static int nspr_luapi_event_new(lua_State *L) {
@@ -152,9 +158,9 @@ static int nspr_luapi_event_init(lua_State *L) {
     int event_type = lua_tonumber(L, 3);
     node->fd = fd;
     node->event_type = event_type;
-    node->read = luapi_event_api_read;
-    node->write = luapi_event_api_write;
-    node->error = luapi_event_api_error;
+    node->read = nspr_luapi_event_api_read;
+    node->write = nspr_luapi_event_api_write;
+    node->error = nspr_luapi_event_api_error;
     return 0;
 }
 
@@ -173,6 +179,9 @@ static int nspr_luapi_event_del(lua_State *L) {
 static void nspr_luapi_event_api(lua_State *L) {
     lua_pushliteral(L, "event");
     lua_newtable(L);    /*  .event table aka {} */
+
+    lua_pushcfunction(L, nspr_luapi_event_api_utils_getfd);
+    lua_setfield(L, -2, "getfd");
 
     lua_pushcfunction(L, nspr_luapi_event_new);
     lua_setfield(L, -2, "new");
