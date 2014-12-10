@@ -119,6 +119,7 @@ static int nspr_select_process_events(int tmsec)
         }
     }
 
+    nready = 0;
     ready = select(max_fd + 1, &read_fd_set, &write_fd_set, NULL, NULL);
 
     if (ready == -1) {

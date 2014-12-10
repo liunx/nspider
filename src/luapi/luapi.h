@@ -8,8 +8,11 @@
 #include <nspr_log.h>
 #include <nspr_mem.h>
 #include <nspr_inet.h>
+#include <nspr_file.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+
+#define MAX_SIZE_T	(~(size_t)0)
 
 #endif /* _NSPR_LUAPI_H_INCLUDED_ */
