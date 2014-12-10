@@ -10,6 +10,8 @@ static int max_fd;
 static unsigned int nevents;
 static nspr_event_node_fd_t **event_node_fds;
 
+static void nspr_select_repair_fd_sets(void);
+
 static int nspr_select_init(int tmsec)
 {
     nspr_event_node_fd_t **index;
@@ -123,8 +125,15 @@ static int nspr_select_process_events(int tmsec)
     ready = select(max_fd + 1, &read_fd_set, &write_fd_set, NULL, NULL);
 
     if (ready == -1) {
-        // TODO add error handle
-        return NSPR_ERROR;
+        if (errno == EBADF) {
+            nspr_select_repair_fd_sets();
+        }
+        else if (errno == EINTR) {
+            // TODO add signal process
+        }
+        else {
+            return NSPR_ERROR;
+        }
     }
 
     for (i = 0; i < nevents; i++) {
@@ -158,6 +167,38 @@ static int nspr_select_process_events(int tmsec)
     }
 
     return NSPR_OK;
+}
+
+/*
+ * come from nginx ngx_select_module.c:ngx_select_repair_fd_sets
+ */
+static void nspr_select_repair_fd_sets(void)
+{
+    unsigned int i;
+    int n;
+    socklen_t len;
+    nspr_event_node_fd_t *node_fd;
+
+    for (i = 0; i < nevents; i++) {
+        node_fd = event_node_fds[i];
+        if (FD_ISSET(node_fd->fd, &read_fd_set)) {
+            len = sizeof(int);
+            if (getsockopt(node_fd->fd, SOL_SOCKET, SO_TYPE, &n, &len) == -1) {
+                FD_CLR(node_fd->fd, &read_fd_set);
+                node_fd->error(node_fd);
+            }
+        }
+
+        if (FD_ISSET(node_fd->fd, &write_fd_set)) {
+            len = sizeof(int);
+            if (getsockopt(node_fd->fd, SOL_SOCKET, SO_TYPE, &n, &len) == -1) {
+                FD_CLR(node_fd->fd, &write_fd_set);
+                node_fd->error(node_fd);
+            }
+        }
+    }
+
+    max_fd = -1;
 }
 
 nspr_event_handler_t nspr_event_handler = {

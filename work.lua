@@ -28,6 +28,7 @@ end
 -- we'll register our handlers
 --
 function event_read(event)
+    print('event_read')
     -- get event.fd
     local fd = nspr.event.getfd(event)
     local tb = events[fd]
@@ -52,10 +53,11 @@ function event_read(event)
     elseif tb['fd_type'] == 'connect' then
         -- checking connect status before write
         print(tb['fd_type'])
-        local data = nspr.file.read(tb['fd'])
-        print(data)
+        local data = nspr.file.read(fd)
+        print(data, string.len(data))
         if string.len(data) == 0 then
-            nspr.file.close(tb['fd'])
+            print('connect closed')
+            nspr.file.close(fd)
             nspr.event.del(event)
             -- release event obj
             events[fd] = nil
@@ -64,6 +66,7 @@ function event_read(event)
 end
 
 function event_write(event)
+    print('event_write')
     local fd = nspr.event.getfd(event)
     local tb = events[fd]
     if tb['fd_type'] == 'connect' then
@@ -78,6 +81,15 @@ function event_write(event)
 end
 
 function event_error(event)
+    -- do clean works
+    print('event_error')
+    local fd = nspr.event.getfd(event)
+    local tb = events[fd]
+    if tb['fd_type'] == 'connect' then
+        print('connect')
+        nspr.file.close(fd)
+        events[fd] = nil
+    end
 end
 
 function event_timer(event)
