@@ -4,8 +4,10 @@
 #include <nspr_event.h>
 #include <nspr_mem.h>
 
-static fd_set read_fd_set;
-static fd_set write_fd_set;
+static fd_set master_read_fd_set;
+static fd_set master_write_fd_set;
+static fd_set work_read_fd_set;
+static fd_set work_write_fd_set;
 static int max_fd;
 static unsigned int nevents;
 static nspr_event_node_fd_t **event_node_fds;
@@ -20,8 +22,8 @@ static int nspr_select_init(int tmsec)
     }
     event_node_fds = index;
     max_fd = -1;
-    FD_ZERO(&read_fd_set);
-    FD_ZERO(&write_fd_set);
+    FD_ZERO(&master_read_fd_set);
+    FD_ZERO(&master_write_fd_set);
     nevents = 0;
     return NSPR_OK;
 }
@@ -36,10 +38,10 @@ static int nspr_select_add(nspr_event_node_fd_t *node_fd)
 
     switch (node_fd->event_type) {
         case NSPR_EVENT_TYPE_READ:
-            FD_SET(node_fd->fd, &read_fd_set);
+            FD_SET(node_fd->fd, &master_read_fd_set);
             break;
         case NSPR_EVENT_TYPE_WRITE:
-            FD_SET(node_fd->fd, &write_fd_set);
+            FD_SET(node_fd->fd, &master_write_fd_set);
             break;
         case NSPR_EVENT_TYPE_ERROR:
             nspr_log_error("We do not need execption error set!\n");
@@ -48,7 +50,7 @@ static int nspr_select_add(nspr_event_node_fd_t *node_fd)
             nspr_log_error("Unkown event type %d\n", node_fd->event_type);
             return NSPR_EUNDEF;
     }
-    if (max_fd < node_fd->fd) {
+    if (max_fd != -1 && max_fd < node_fd->fd) {
         max_fd = node_fd->fd;
     }
     event_node_fds[nevents] = node_fd;
@@ -60,21 +62,16 @@ static int nspr_select_add(nspr_event_node_fd_t *node_fd)
 static int nspr_select_del(nspr_event_node_fd_t *node_fd)
 {
     nspr_event_node_fd_t *n;
-    // check fd > 0 or we'll FD_SET failed
-    if (node_fd->fd < 0) {
-        node_fd->index = NSPR_INVALID_EVENT_FD_INDEX;
-        return NSPR_OK;
-    }
 
     if (node_fd->index == NSPR_INVALID_EVENT_FD_INDEX)
         return NSPR_OK;
 
     switch (node_fd->event_type) {
         case NSPR_EVENT_TYPE_READ:
-            FD_CLR(node_fd->fd, &read_fd_set);
+            FD_CLR(node_fd->fd, &master_read_fd_set);
             break;
         case NSPR_EVENT_TYPE_WRITE:
-            FD_CLR(node_fd->fd, &write_fd_set);
+            FD_CLR(node_fd->fd, &master_write_fd_set);
             break;
         case NSPR_EVENT_TYPE_ERROR:
             break;
@@ -100,8 +97,8 @@ static int nspr_select_del(nspr_event_node_fd_t *node_fd)
 static void nspr_select_exit(void)
 {
     nspr_free(event_node_fds);
-    FD_ZERO(&read_fd_set);
-    FD_ZERO(&write_fd_set);
+    FD_ZERO(&master_read_fd_set);
+    FD_ZERO(&master_write_fd_set);
 }
 
 static int nspr_select_process_events(int tmsec)
@@ -122,7 +119,11 @@ static int nspr_select_process_events(int tmsec)
     }
 
     nready = 0;
-    ready = select(max_fd + 1, &read_fd_set, &write_fd_set, NULL, NULL);
+    work_read_fd_set = master_read_fd_set;
+    work_write_fd_set = master_write_fd_set;
+
+    ready = select(max_fd + 1, &work_read_fd_set, &work_write_fd_set, NULL, NULL);
+    nspr_log_error("max_fd -- %d, ready -- %d\n", max_fd, ready);
 
     if (ready == -1) {
         if (errno == EBADF) {
@@ -140,8 +141,9 @@ static int nspr_select_process_events(int tmsec)
         node_fd = event_node_fds[i];
         found = 0;
 
+	nspr_log_error("node_fd->fd -- %d\n", node_fd->fd);
         if (node_fd->event_type == NSPR_EVENT_TYPE_READ) {
-            if (FD_ISSET(node_fd->fd, &read_fd_set)) {
+            if (FD_ISSET(node_fd->fd, &work_read_fd_set)) {
                 if (node_fd->read) {
                     node_fd->read(node_fd);
                 }
@@ -149,7 +151,7 @@ static int nspr_select_process_events(int tmsec)
             }
         }
         else if (node_fd->event_type == NSPR_EVENT_TYPE_WRITE) {
-            if (FD_ISSET(node_fd->fd, &write_fd_set)) {
+            if (FD_ISSET(node_fd->fd, &work_write_fd_set)) {
                 if (node_fd->write) {
                     node_fd->write(node_fd);
                 }
@@ -181,18 +183,18 @@ static void nspr_select_repair_fd_sets(void)
 
     for (i = 0; i < nevents; i++) {
         node_fd = event_node_fds[i];
-        if (FD_ISSET(node_fd->fd, &read_fd_set)) {
+        if (FD_ISSET(node_fd->fd, &master_read_fd_set)) {
             len = sizeof(int);
             if (getsockopt(node_fd->fd, SOL_SOCKET, SO_TYPE, &n, &len) == -1) {
-                FD_CLR(node_fd->fd, &read_fd_set);
+                FD_CLR(node_fd->fd, &master_read_fd_set);
                 node_fd->error(node_fd);
             }
         }
 
-        if (FD_ISSET(node_fd->fd, &write_fd_set)) {
+        if (FD_ISSET(node_fd->fd, &master_write_fd_set)) {
             len = sizeof(int);
             if (getsockopt(node_fd->fd, SOL_SOCKET, SO_TYPE, &n, &len) == -1) {
-                FD_CLR(node_fd->fd, &write_fd_set);
+                FD_CLR(node_fd->fd, &master_write_fd_set);
                 node_fd->error(node_fd);
             }
         }

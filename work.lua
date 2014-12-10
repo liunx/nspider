@@ -14,6 +14,7 @@ function init()
         nspr.event.add(ev, nspr.event.NSPR_EVENT_TYPE_READ)
     end
 
+--[[
     fd = nspr.inet.connect('10.129.228.66', 8000)
     if fd > 0 then
         ev = nspr.event.new()
@@ -21,6 +22,7 @@ function init()
         nspr.event.init(ev, fd, nspr.event.NSPR_EVENT_TYPE_WRITE)
         nspr.event.add(ev, nspr.event.NSPR_EVENT_TYPE_WRITE)
     end
+--]]
     print('init done')
 end
 
@@ -32,21 +34,23 @@ function event_read(event)
     -- get event.fd
     local fd = nspr.event.getfd(event)
     local tb = events[fd]
+    print('fd -- ' .. fd)
     if tb['fd_type'] == 'listen' then
         print(tb['fd_type'])
         local newfd = nspr.inet.accept(fd)
         -- add new event node
         local ev = nspr.event.new()
         nspr.event.init(ev, newfd, 0)
-        nspr.event.add(ev)
+        nspr.event.add(ev, nspr.event.NSPR_EVENT_TYPE_READ)
         events[newfd] = {node = ev, fd = newfd, fd_type = 'accept', dir = 'read'}
     elseif tb['fd_type'] == 'accept' then
         print(tb['fd_type'])
-        local data = nspr.file.read(tb['fd'])
+        local data = nspr.file.read(fd)
         print(data)
         if string.len(data) == 0 then
-            nspr.file.close(tb['fd'])
+            print('close')
             nspr.event.del(event)
+            nspr.file.close(fd)
             -- release event obj
             events[fd] = nil
         end
