@@ -17,6 +17,11 @@ void nspr_event_process(void)
         if (delta) {
             nspr_event_expire_timers();
         }
+        // check signal
+        if (nspr_event_signal) {
+            nspr_event_signal_process();
+            nspr_event_signal = 0;
+        }
         if (ret != NSPR_OK) {
             break;
         }

@@ -3,7 +3,9 @@
 #include <nspider_config.h>
 #include <nspr_common.h>
 #include <nspider.h>
+#include <nspr_mem.h>
 #include <nspr_timer.h>
+#include <nspr_signal.h>
 
 // event type
 #define NSPR_EVENT_TYPE_READ    0

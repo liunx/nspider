@@ -30,6 +30,11 @@ function init()
     timer = nspr.timer.new()
     nspr.timer.set(timer, 3000)
     nspr.timer.add(timer)
+
+    -- add signal
+    local signal = nspr.signal.new()
+    nspr.signal.set(signal, 10)
+    nspr.signal.add(signal)
     print('init done')
 end
 
@@ -111,6 +116,10 @@ function event_timer(event)
 end
 
 function event_signal(event)
+    print('event_signal')
+    local signum = nspr.signal.get(event)
+    print(signum)
+    nspr.signal.del(event)
 end
 
 -- 

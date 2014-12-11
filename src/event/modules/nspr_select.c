@@ -2,7 +2,6 @@
  * nspr_select.c
  */
 #include <nspr_event.h>
-#include <nspr_mem.h>
 
 static fd_set master_read_fd_set;
 static fd_set master_write_fd_set;
@@ -138,9 +137,11 @@ static int nspr_select_process_events(unsigned long timer)
     if (ready == -1) {
         if (errno == EBADF) {
             nspr_select_repair_fd_sets();
+            return NSPR_OK;
         }
         else if (errno == EINTR) {
-            // TODO add signal process
+            nspr_event_signal = 1;
+            return NSPR_OK;
         }
         else {
             return NSPR_ERROR;

@@ -14,4 +14,5 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <signal.h>
 #endif /* _NSPR_LINUX_H_INCLUDED_ */
