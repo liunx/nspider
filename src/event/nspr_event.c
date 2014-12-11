@@ -3,12 +3,19 @@
  */
 #include <nspr_event.h>
 
+static int event_loop = 1;
+
+void nspr_event_break(void)
+{
+    event_loop = 0;
+}
+
 void nspr_event_process(void)
 {
     int ret;
     unsigned long delta, timer;
 
-    for(;;) {
+    while (event_loop) {
         timer = nspr_event_find_timer();
         delta = nspr_current_msec;
         ret = (int) nspr_event_handler.process_events(timer);

@@ -33,7 +33,7 @@ function init()
 
     -- add signal
     local signal = nspr.signal.new()
-    nspr.signal.set(signal, 10)
+    nspr.signal.set(signal, 2)
     nspr.signal.add(signal)
     print('init done')
 end
@@ -119,6 +119,9 @@ function event_signal(event)
     print('event_signal')
     local signum = nspr.signal.get(event)
     print(signum)
+    if signum == 2 then
+        nspr.event.exit()
+    end
     nspr.signal.del(event)
 end
 

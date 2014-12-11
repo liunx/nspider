@@ -216,6 +216,11 @@ static int nspr_luapi_event_del(lua_State *L) {
     return 0;
 }
 
+static int nspr_luapi_event_break(lua_State *L) {
+    nspr_event_break();
+    return 0;
+}
+
 static void nspr_luapi_event_api(lua_State *L) {
     lua_pushliteral(L, "event");
     lua_newtable(L);    /*  .event table aka {} */
@@ -243,6 +248,8 @@ static void nspr_luapi_event_api(lua_State *L) {
     lua_setfield(L, -2, "add");
     lua_pushcfunction(L, nspr_luapi_event_del);
     lua_setfield(L, -2, "del");
+    lua_pushcfunction(L, nspr_luapi_event_break);
+    lua_setfield(L, -2, "exit");
 
     lua_createtable(L, 0 /* narr */, 2 /* nrec */);    /*  the metatable */
     lua_setmetatable(L, -2);    /*  tie the metatable to param table */

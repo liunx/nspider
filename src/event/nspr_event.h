@@ -62,4 +62,5 @@ extern nspr_event_handler_t nspr_event_handler;
 #define nspr_event_add nspr_event_handler.add
 #define nspr_event_del nspr_event_handler.del
 
+void nspr_event_break(void);
 #endif /* _NSPR_EVENT_H_INCLUDED_ */
