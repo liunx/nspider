@@ -54,6 +54,7 @@ static int nspr_select_add(nspr_event_node_fd_t *node_fd)
         max_fd = node_fd->fd;
     }
     event_node_fds[nevents] = node_fd;
+    node_fd->index = nevents;
     nevents++;
 
     return NSPR_OK;
@@ -123,7 +124,6 @@ static int nspr_select_process_events(int tmsec)
     work_write_fd_set = master_write_fd_set;
 
     ready = select(max_fd + 1, &work_read_fd_set, &work_write_fd_set, NULL, NULL);
-    nspr_log_error("max_fd -- %d, ready -- %d\n", max_fd, ready);
 
     if (ready == -1) {
         if (errno == EBADF) {
@@ -141,7 +141,6 @@ static int nspr_select_process_events(int tmsec)
         node_fd = event_node_fds[i];
         found = 0;
 
-	nspr_log_error("node_fd->fd -- %d\n", node_fd->fd);
         if (node_fd->event_type == NSPR_EVENT_TYPE_READ) {
             if (FD_ISSET(node_fd->fd, &work_read_fd_set)) {
                 if (node_fd->read) {
