@@ -18,6 +18,7 @@ CORE_DEPS = src/core/nspider.h \
 	    src/core/nspr_mem.h \
 	    src/core/nspr_inet.h \
 	    src/core/nspr_file.h \
+	    src/core/nspr_timer.h \
 	    src/event/nspr_event.h \
 	    src/os/nspr_linux.h \
 	    src/common/nspr_common.h \
@@ -43,6 +44,7 @@ objs/nspider: objs/src/core/nspider.o \
     objs/src/core/nspr_mem.o \
     objs/src/core/nspr_inet.o \
     objs/src/core/nspr_file.o \
+    objs/src/core/nspr_timer.o \
     objs/src/event/nspr_event.o \
     objs/src/event/modules/nspr_select.o \
     objs/src/thirdparts/list/list.o \
@@ -59,6 +61,7 @@ objs/nspider: objs/src/core/nspider.o \
 	    objs/src/core/nspr_mem.o \
 	    objs/src/core/nspr_inet.o \
 	    objs/src/core/nspr_file.o \
+	    objs/src/core/nspr_timer.o \
 	    objs/src/event/nspr_event.o \
 	    objs/src/event/modules/nspr_select.o \
 	    objs/src/thirdparts/list/list.o \
@@ -99,6 +102,12 @@ objs/src/core/nspr_file.o: $(CORE_DEPS) \
 	$(CC) -c $(CFLAGS) $(CORE_INCS) \
 	    -o objs/src/core/nspr_file.o \
 	    src/core/nspr_file.c
+
+objs/src/core/nspr_timer.o: $(CORE_DEPS) \
+    src/core/nspr_timer.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+	    -o objs/src/core/nspr_timer.o \
+	    src/core/nspr_timer.c
 
 objs/src/event/nspr_event.o: $(CORE_DEPS) \
     src/event/nspr_event.c
@@ -168,6 +177,7 @@ clean:
 	    objs/src/core/nspr_mem.o \
 	    objs/src/core/nspr_inet.o \
 	    objs/src/core/nspr_file.o \
+	    objs/src/core/nspr_timer.o \
 	    objs/src/event/nspr_event.o \
 	    objs/src/thirdparts/list/list.o \
 	    objs/src/thirdparts/list/list_node.o \

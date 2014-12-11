@@ -21,6 +21,15 @@ function init()
         nspr.event.init(ev, fd, nspr.event.NSPR_EVENT_TYPE_WRITE)
         nspr.event.add(ev, nspr.event.NSPR_EVENT_TYPE_WRITE)
     end
+
+    -- add timer
+    local timer = nspr.timer.new()
+    nspr.timer.set(timer, 1000)
+    nspr.timer.add(timer)
+
+    timer = nspr.timer.new()
+    nspr.timer.set(timer, 3000)
+    nspr.timer.add(timer)
     print('init done')
 end
 
@@ -95,6 +104,10 @@ function event_error(event)
 end
 
 function event_timer(event)
+    print('event_timer')
+    local timer = nspr.timer.get(event)
+    print(timer)
+    nspr.timer.del(event)
 end
 
 function event_signal(event)

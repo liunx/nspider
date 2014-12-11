@@ -6,8 +6,17 @@
 void nspr_event_process(void)
 {
     int ret;
+    unsigned long delta, timer;
+
     for(;;) {
-        ret = (int) nspr_event_handler.process_events(100);
+        timer = nspr_event_find_timer();
+        delta = nspr_current_msec;
+        ret = (int) nspr_event_handler.process_events(timer);
+        delta = nspr_current_msec - delta;
+
+        if (delta) {
+            nspr_event_expire_timers();
+        }
         if (ret != NSPR_OK) {
             break;
         }

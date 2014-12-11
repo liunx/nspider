@@ -102,13 +102,12 @@ static void nspr_select_exit(void)
     FD_ZERO(&master_write_fd_set);
 }
 
-static int nspr_select_process_events(int tmsec)
+static int nspr_select_process_events(unsigned long timer)
 {
-    //struct timeval tv;
     int ready, nready;
     nspr_event_node_fd_t *node_fd;
     unsigned int i, found;
-    // FIXME add timer
+    struct timeval tv, *tp;
 
     if (max_fd == -1) {
         for (i = 0; i < nevents; i++) {
@@ -119,11 +118,22 @@ static int nspr_select_process_events(int tmsec)
         }
     }
 
+    if (timer == NSPR_TIMER_INFINITE) {
+        tp = NULL;
+
+    } else {
+        tv.tv_sec = (long) (timer / 1000);
+        tv.tv_usec = (long) ((timer % 1000) * 1000);
+        tp = &tv;
+    }
+
     nready = 0;
     work_read_fd_set = master_read_fd_set;
     work_write_fd_set = master_write_fd_set;
 
-    ready = select(max_fd + 1, &work_read_fd_set, &work_write_fd_set, NULL, NULL);
+    ready = select(max_fd + 1, &work_read_fd_set, &work_write_fd_set, NULL, tp);
+
+    nspr_time_update();
 
     if (ready == -1) {
         if (errno == EBADF) {

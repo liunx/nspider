@@ -3,6 +3,7 @@
 #include <nspider_config.h>
 #include <nspr_common.h>
 #include <nspider.h>
+#include <nspr_timer.h>
 
 // event type
 #define NSPR_EVENT_TYPE_READ    0
@@ -47,7 +48,7 @@ typedef struct nspr_event_node_fd_s nspr_event_node_fd_t;
 struct nspr_event_handler_s {
     int (*init)(int );
     int (*add)(nspr_event_node_fd_t *);
-    int (*process_events)(int );
+    int (*process_events)(unsigned long );
     int (*del)(nspr_event_node_fd_t *);
     void (*exit)(void);
     void *data;

@@ -7,6 +7,7 @@ static lua_State *L;
 static void nspr_luapi_event_api(lua_State *L);
 static void nspr_luapi_inet_api(lua_State *L);
 static void nspr_luapi_file_api(lua_State *L);
+static void nspr_luapi_timer_api(lua_State *L);
 
 static void nspr_bail(lua_State *L, char *msg) {
     nspr_log_error("\nFATAL ERROR:\n  %s: %s\n\n", msg, lua_tostring(L, -1));
@@ -69,6 +70,7 @@ static void nspr_luapi_nspider_api(lua_State *L) {
     nspr_luapi_event_api(L);
     nspr_luapi_inet_api(L);
     nspr_luapi_file_api(L);
+    nspr_luapi_timer_api(L);
 
     /*
      * loading package 
@@ -140,6 +142,19 @@ static void nspr_luapi_event_api_error(nspr_event_node_fd_t *node)
         return;
     }
     lua_pushlightuserdata(L, node);
+    if (lua_pcall(L, 1, 0, 0) != 0) {
+        return;
+    }
+}
+
+static void nspr_luapi_event_api_timer(nspr_event_timer_t *timer)
+{
+    lua_getglobal(L, "event_timer");
+    if (!lua_isfunction(L, -1)) {
+        nspr_bail(L, "event_timer is not a function!");
+        return;
+    }
+    lua_pushlightuserdata(L, timer);
     if (lua_pcall(L, 1, 0, 0) != 0) {
         return;
     }
@@ -261,6 +276,8 @@ static void nspr_luapi_inet_api(lua_State *L) {
     lua_rawset(L, -3);    /*  set nspr.inet table */
 }
 // XXX luapi_inet_api --> END
+
+// XXX luapi_file_api --> BEGIN
 static int nspr_luapi_file_api_read(lua_State *L) {
     size_t rlen = LUAL_BUFFERSIZE;
     int fd = lua_tonumber(L, 1);
@@ -296,7 +313,6 @@ static int nspr_luapi_file_api_close(lua_State *L) {
     return 1;
 }
 
-// XXX luapi_file_api --> BEGIN
 static void nspr_luapi_file_api(lua_State *L) {
     lua_pushliteral(L, "file");
     lua_newtable(L);    /*  .file table aka {} */
@@ -313,3 +329,60 @@ static void nspr_luapi_file_api(lua_State *L) {
     lua_rawset(L, -3);    /*  set nspr.file table */
 }
 // XXX luapi_file_api --> END
+
+// XXX luapi_timer_api --> START
+static int nspr_luapi_timer_api_new(lua_State *L) {
+    lua_newuserdata(L, sizeof(nspr_event_timer_t));
+    return 1;
+}
+
+static int nspr_luapi_timer_api_set(lua_State *L) {
+    nspr_event_timer_t *t;
+    t = (nspr_event_timer_t *)lua_touserdata(L, 1);
+    unsigned long timer = (unsigned long) lua_tonumber(L, 2);
+    t->timer = timer;
+    return 1;
+}
+
+static int nspr_luapi_timer_api_get(lua_State *L) {
+    nspr_event_timer_t *t;
+    t = (nspr_event_timer_t *)lua_touserdata(L, 1);
+    lua_pushnumber(L, t->timer);
+    return 1;
+}
+
+static int nspr_luapi_timer_api_add(lua_State *L) {
+    nspr_event_timer_t *t;
+    t = (nspr_event_timer_t *)lua_touserdata(L, 1);
+    t->handler = nspr_luapi_event_api_timer;
+    nspr_event_add_timer(t);
+    return 1;
+}
+
+static int nspr_luapi_timer_api_del(lua_State *L) {
+    nspr_event_timer_t *t;
+    t = (nspr_event_timer_t *)lua_topointer(L, 1);
+    nspr_event_del_timer(t);
+    return 1;
+}
+
+static void nspr_luapi_timer_api(lua_State *L) {
+    lua_pushliteral(L, "timer");
+    lua_newtable(L);    /*  .timer table aka {} */
+
+    lua_pushcfunction(L, nspr_luapi_timer_api_new);
+    lua_setfield(L, -2, "new");
+    lua_pushcfunction(L, nspr_luapi_timer_api_set);
+    lua_setfield(L, -2, "set");
+    lua_pushcfunction(L, nspr_luapi_timer_api_get);
+    lua_setfield(L, -2, "get");
+    lua_pushcfunction(L, nspr_luapi_timer_api_add);
+    lua_setfield(L, -2, "add");
+    lua_pushcfunction(L, nspr_luapi_timer_api_del);
+    lua_setfield(L, -2, "del");
+
+    lua_createtable(L, 0 /* narr */, 2 /* nrec */);    /*  the metatable */
+    lua_setmetatable(L, -2);    /*  tie the metatable to param table */
+    lua_rawset(L, -3);    /*  set nspr.timer table */
+}
+// XXX luapi_timer_api --> END

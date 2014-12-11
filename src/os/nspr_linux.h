@@ -13,4 +13,5 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #endif /* _NSPR_LINUX_H_INCLUDED_ */
