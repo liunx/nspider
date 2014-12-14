@@ -35,6 +35,7 @@
 // fd node
 struct nspr_event_node_fd_s {
     int fd;
+    FILE *fp; // for popen etc
     int event_type;
     unsigned int index;
     // handlers

@@ -29,7 +29,7 @@ int main()
 	int fd;
 	int flags = 1;
 	char buf[64];
-	ssize_t ret;
+	//ssize_t ret;
 	fd_set rfds;
 	printf("popen...\n");
 	fp = popen("sleep 10;echo hello", "r");
@@ -45,8 +45,10 @@ int main()
 	printf("fread...\n");
 	fread(buf, sizeof(char), 64, fp);
 	printf("pclose...\n");
+	//fp = fdopen(fd, "r");
 	pclose(fp);
 	printf("return...\n");
+	sleep(100);
 	return 0;
 }
 

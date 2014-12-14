@@ -335,6 +335,22 @@ static int nspr_luapi_file_api_close(lua_State *L) {
     return 1;
 }
 
+static int nspr_luapi_file_api_popen(lua_State *L) {
+    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_touserdata(L, 1);
+    const char *cmd = lua_tostring(L, 2);
+    FILE *fp = nspr_file_popen(cmd, "r");
+    int fd = fileno(fp);
+    node->fp = fp;
+    lua_pushnumber(L, fd);
+    return 1;
+}
+
+static int nspr_luapi_file_api_pclose(lua_State *L) {
+    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_topointer(L, 1);
+    nspr_file_pclose(node->fp);
+    return 1;
+}
+
 static void nspr_luapi_file_api(lua_State *L) {
     lua_pushliteral(L, "file");
     lua_newtable(L);    /*  .file table aka {} */
@@ -345,6 +361,10 @@ static void nspr_luapi_file_api(lua_State *L) {
     lua_setfield(L, -2, "write");
     lua_pushcfunction(L, nspr_luapi_file_api_close);
     lua_setfield(L, -2, "close");
+    lua_pushcfunction(L, nspr_luapi_file_api_popen);
+    lua_setfield(L, -2, "popen");
+    lua_pushcfunction(L, nspr_luapi_file_api_pclose);
+    lua_setfield(L, -2, "pclose");
 
     lua_createtable(L, 0 /* narr */, 2 /* nrec */);    /*  the metatable */
     lua_setmetatable(L, -2);    /*  tie the metatable to param table */

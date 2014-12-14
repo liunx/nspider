@@ -17,3 +17,13 @@ int nspr_file_close(int fd)
 {
     return close(fd);
 }
+
+FILE *nspr_file_popen(const char *cmd, const char *mode)
+{
+    return popen(cmd, mode);
+}
+
+int nspr_file_pclose(FILE *fp)
+{
+    return pclose(fp);
+}

@@ -22,6 +22,15 @@ function init()
         nspr.event.add(ev, nspr.event.NSPR_EVENT_TYPE_WRITE)
     end
 
+    -- popen
+    ev = nspr.event.new()
+    fd = nspr.file.popen(ev, "sleep 30;echo 'come from sleep 10'")
+    if fd > 0 then
+        events[fd] = {node = ev, fd = fd, fd_type = 'popen', dir = 'read'}
+        nspr.event.init(ev, fd, nspr.event.NSPR_EVENT_TYPE_READ)
+        nspr.event.add(ev, nspr.event.NSPR_EVENT_TYPE_READ)
+    end
+
     -- add timer
     local timer = nspr.timer.new()
     nspr.timer.set(timer, 1000)
@@ -78,6 +87,14 @@ function event_read(event)
             -- release event obj
             events[fd] = nil
         end
+    elseif tb['fd_type'] == 'popen' then
+        print(tb['fd_type'])
+        local data = nspr.file.read(fd)
+        print(data)
+        nspr.event.del(event)
+        nspr.file.pclose(event)
+        -- release event obj
+        events[fd] = nil
     end
 end
 
