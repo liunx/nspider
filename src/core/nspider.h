@@ -15,5 +15,6 @@ typedef struct nspr_nspider_s nspr_nspider_t;
 extern void (*nspr_nspider_process)(void);
 extern int (*nspr_log_error)(const char *, ...);
 extern nspr_nspider_t  *nspr_nspider_modules[];
+extern unsigned char *nspr_conf_file;
 
 #endif /* _NSPIDER_H_INCLUDED_ */

@@ -15,7 +15,7 @@ static void nspr_bail(lua_State *L, char *msg) {
 }
 
 static int nspr_luapi_loadfile(lua_State *L) {
-    if (luaL_loadfile(L, "work.lua")) {
+    if (luaL_loadfile(L, (char *)nspr_conf_file)) {
         nspr_bail(L, "luaL_loadfile() failed");
         return NSPR_ERROR;
     }

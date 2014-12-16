@@ -8,6 +8,7 @@ int (*nspr_log_error)(const char *, ...);
 
 static int nspr_option_show_help = 0;
 static int nspr_option_show_version = 0;
+unsigned char *nspr_conf_file = NULL;
 /*
  * XXX: the code come from [nginx.c:ngx_get_options]
  */
@@ -35,12 +36,26 @@ static int nspr_get_options(int argc, char *const *argv)
             case 'v':
                 nspr_option_show_version = 1;
                 break;
+            case 'c':
+                if (*p) {
+                    nspr_conf_file = p;
+                    goto next;
+                }
+
+                if (argv[++i]) {
+                    nspr_conf_file = (u_char *) argv[i];
+                    goto next;
+                }
+
+                nspr_log_error("option \"-c\" requires file name");
+                return NSPR_ERROR;
             default:
                 nspr_log_error("invalid option: \"%c\"\n", *(p - 1));
                 return NSPR_ERROR;
             }
         }
 
+next:
         continue;
     }
 
@@ -97,11 +112,12 @@ int main(int argc, char *const *argv)
     if (nspr_option_show_help == 1) {
         nspr_log_error(
                 "nspider version: nspider/0.1.0\n"
-                "Usage: nspider [-?hvV]\n\n"
+                "Usage: nspider [-?hvVc]\n\n"
                 "Options:\n"
                 "-?,-h          : this help\n"
                 "-v             : show version and exit\n"
                 "-V             : show version and exit\n"
+		"-c		: config filename\n"
                 );
         return 1;
     }
