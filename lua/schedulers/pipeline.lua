@@ -85,41 +85,56 @@ function pipeline.listen (addr, port, fun)
 end
 
 function pipeline.read (id)
-    return databuf[id]
+    local table = events[id]
+    local fd = table['fd']
+    local ev = table['ev']
+    event.add(ev, event.NSPR_EVENT_TYPE_READ)
+    coroutine.yield()
+    event.del(ev)
+    local data = file.read(fd)
+    return data
 end
 
 function pipeline.write (id, data)
     local table = events[id]
     local fd = table['fd']
+    local ev = table['ev']
+    event.add(ev, event.NSPR_EVENT_TYPE_WRITE)
+    coroutine.yield()
+    event.del(ev)
     file.write(fd, data, string.len(data))
 end
 
 function pipeline.close (id)
     local table = events[id]
     local fd = table['fd']
-    local ev = table['ev']
-    event.del(ev)
     file.close(fd)
 end
 
 function pipeline.connect (id, addr, port)
     local newid = eventid_new()
     local fd = inet.connect(addr, port)
+    if fd == nil then
+        return nil
+    end
+
     local table = events[id]
     if fd > 0 then
         local newtable = {}
         local ev = event.new()
-        event.init(ev, fd, event.NSPR_EVENT_TYPE_WRITE, newid)
-        event.add(ev, event.NSPR_EVENT_TYPE_WRITE)
         newtable['ev'] = ev
         newtable['fd'] = fd
-        print('fd --- ' .. fd)
-        print(table['co'])
         newtable['co'] = table['co']
-        print('newid ' .. newid)
         events[newid] = newtable
+        event.init(ev, fd, event.NSPR_EVENT_TYPE_WRITE, newid)
+        event.add(ev, event.NSPR_EVENT_TYPE_WRITE)
+        print('yield...')
+        coroutine.yield()
+        print('delete ev...')
+        event.del(ev)
+        return newid
     end
-    return newid
+    return nil
 end
 
 function pipeline.request (rtb)
@@ -174,35 +189,25 @@ function pipeline.oread (ev)
             local newid = eventid_new()
             local ev = event.new()
             event.init(ev, newfd, event.NSPR_EVENT_TYPE_READ, newid)
-            event.add(ev, event.NSPR_EVENT_TYPE_READ)
             local newtable = {}
             newtable['co'] = coroutine.create(table['fun'])
             newtable['fd'] = newfd
             newtable['ev'] = ev
             events[newid] = newtable
+            -- first run the coroutine
+            coroutine.resume(newtable['co'], newid)
         end
         return
     end
-    -- care for close event
-    local data = file.read(fd)
-    if string.len(data) == 0 then
-        event.del(table['ev'])
-        file.close(fd)
-    else
-        -- call callback hook
-        databuf[id] = data
-        coroutine.resume(table['co'], id)
-    end
+
+    coroutine.resume(table['co'], id)
 end
 
 function pipeline.owrite (ev)
     local id = event.getid(ev)
     local table = events[id]
-    local fd = table['fd']
 
     coroutine.resume(table['co'], id)
-    event.del(table['ev'])
-    event.add(table['ev'], event.NSPR_EVENT_TYPE_READ)
 end
 
 function pipeline.oerror (ev)
