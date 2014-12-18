@@ -181,6 +181,12 @@ static int nspr_luapi_event_api_utils_getfd(lua_State *L) {
     return 1;
 }
 
+static int nspr_luapi_event_api_utils_getid(lua_State *L) {
+    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_topointer(L, 1);
+    lua_pushnumber(L, node->eventid);
+    return 1;
+}
+
 static int nspr_luapi_event_new(lua_State *L) {
     nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_newuserdata(L, sizeof(nspr_event_node_fd_t));
     if (node == NULL) {
@@ -194,8 +200,10 @@ static int nspr_luapi_event_init(lua_State *L) {
     nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_touserdata(L, 1);
     int fd = lua_tonumber(L, 2);
     int event_type = lua_tonumber(L, 3);
+    unsigned int eventid = lua_tonumber(L, 4);
     node->fd = fd;
     node->event_type = event_type;
+    node->eventid = eventid;
     node->read = nspr_luapi_event_api_read;
     node->write = nspr_luapi_event_api_write;
     node->error = nspr_luapi_event_api_error;
@@ -211,7 +219,7 @@ static int nspr_luapi_event_add(lua_State *L) {
 }
 
 static int nspr_luapi_event_del(lua_State *L) {
-    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_topointer(L, 1);
+    nspr_event_node_fd_t *node = (nspr_event_node_fd_t *)lua_touserdata(L, 1);
     nspr_event_del(node);
     return 0;
 }
@@ -239,6 +247,8 @@ static void nspr_luapi_event_api(lua_State *L) {
 
     lua_pushcfunction(L, nspr_luapi_event_api_utils_getfd);
     lua_setfield(L, -2, "getfd");
+    lua_pushcfunction(L, nspr_luapi_event_api_utils_getid);
+    lua_setfield(L, -2, "getid");
 
     lua_pushcfunction(L, nspr_luapi_event_new);
     lua_setfield(L, -2, "new");

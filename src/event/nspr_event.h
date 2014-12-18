@@ -38,6 +38,7 @@ struct nspr_event_node_fd_s {
     FILE *fp; // for popen etc
     int event_type;
     unsigned int index;
+    unsigned int eventid;
     // handlers
     void (*read)(struct nspr_event_node_fd_s *);
     void (*write)(struct nspr_event_node_fd_s *);
