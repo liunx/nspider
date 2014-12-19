@@ -12,8 +12,7 @@ local function iwifi_wait (id)
     pipeline.sleep(id, 9000)
     pipeline.write(id, data)
 
-    --[[
-    local cid = pipeline.connect(id, '127.0.0.1', 8000)
+    local cid = pipeline.connect(id, 'localhost', 8000)
     if cid ~= nil then
         pipeline.write(cid, 'hello from nspider!')
         data = pipeline.read(cid)
@@ -21,7 +20,6 @@ local function iwifi_wait (id)
         pipeline.close(cid)
         pipeline.complete(cid)
     end
-    --]]
 
     pipeline.close(id)
     pipeline.complete(id)
@@ -49,6 +47,13 @@ local function iwifi_signal (id)
     end
 end
 
+local function iwifi_popen (id)
+    local data = pipeline.popen(id, 'echo hello')
+    print(data)
+    data = pipeline.popen(id, 'ping -c 1 www.baidu.com')
+    print(data)
+end
+
 local function iwifi_exit ()
     print('iwifi exiting...')
 end
@@ -57,8 +62,9 @@ local function init ()
     pipeline.do_exit(iwifi_exit)
     pipeline.listen('0.0.0.0', 8080, iwifi_wait)
     pipeline.coroutine(iwifi_heartbeat)
-    pipeline.coroutine(iwifi_heartbeat2)
+    --pipeline.coroutine(iwifi_heartbeat2)
     pipeline.coroutine(iwifi_signal)
+    pipeline.coroutine(iwifi_popen)
 end
 
 -- start

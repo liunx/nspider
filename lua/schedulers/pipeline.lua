@@ -45,7 +45,40 @@ local function uuid ()
     return uuid
 end
 
+local function popen (id, cmd)
+    local ev = event.new()
+    local fd = file.popen(ev, cmd)
+    if fd < 0 then
+        return nil
+    end
+    event.init(ev, fd, event.NSPR_EVENT_TYPE_READ, id)
+    event.add(ev, event.NSPR_EVENT_TYPE_READ)
+    coroutine.yield()
+    event.del(ev)
+    local data = file.read(fd)
+    file.pclose(ev)
+
+    return data
+end
+
+
+local function gethostbyname (id, addr)
+    -- check for ip
+    local ip = string.match(addr, "([0-9]+.[0-9]+.[0-9]+.[0-9]+)")
+    if ip ~= nil then
+        return ip
+    end
+    -- get ip by name
+    local data = popen(id, 'ping -c 1 ' .. addr)
+    ip = string.match(data, "([0-9]+.[0-9]+.[0-9]+.[0-9]+)")
+    return ip
+end
+
 -- user interfaces
+function pipeline.popen (id, cmd)
+    return popen(id, cmd)
+end
+
 function pipeline.wait (wtb)
     local fd
     local ev
@@ -123,7 +156,12 @@ end
 
 function pipeline.connect (id, addr, port)
     local newid = eventid_new()
-    local fd = inet.connect(addr, port)
+    local ip = gethostbyname(id, addr)
+    if ip == nil then
+        return nil
+    end
+
+    local fd = inet.connect(ip, port)
     if fd == nil then
         return nil
     end
@@ -138,9 +176,7 @@ function pipeline.connect (id, addr, port)
         events[newid] = newtable
         event.init(ev, fd, event.NSPR_EVENT_TYPE_WRITE, newid)
         event.add(ev, event.NSPR_EVENT_TYPE_WRITE)
-        print('yield...')
         coroutine.yield()
-        print('delete ev...')
         event.del(ev)
         return newid
     end
