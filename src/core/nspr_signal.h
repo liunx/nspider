@@ -5,6 +5,7 @@
 #define NSPR_SIGNAL_MAX 64
 
 struct nspr_event_signal_s {
+    unsigned long id;
     union {
         int signum;
         int index;

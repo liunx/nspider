@@ -450,16 +450,19 @@ static int nspr_luapi_signal_api_new(lua_State *L) {
 static int nspr_luapi_signal_api_set(lua_State *L) {
     nspr_event_signal_t *s;
     s = (nspr_event_signal_t *)lua_touserdata(L, 1);
-    int signum = lua_tonumber(L, 2);
+    unsigned long id = (unsigned long)lua_tonumber(L, 2);
+    int signum = lua_tonumber(L, 3);
     s->signum = signum;
+    s->id = id;
     return 1;
 }
 
 static int nspr_luapi_signal_api_get(lua_State *L) {
     nspr_event_signal_t *s;
     s = (nspr_event_signal_t *)lua_touserdata(L, 1);
+    lua_pushnumber(L, s->id);
     lua_pushnumber(L, s->signum);
-    return 1;
+    return 2;
 }
 
 static int nspr_luapi_signal_api_add(lua_State *L) {

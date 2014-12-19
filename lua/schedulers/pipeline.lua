@@ -17,6 +17,7 @@ local signals = {}
 local eventids = {}
 
 local databuf = {}
+local exit_funs = {}
 
 local function eventid_new ()
     local eventid
@@ -166,17 +167,33 @@ function pipeline.complete (id)
     events[id] = nil
 end
 
-function pipeline.timer ()
-    local id = eventid_new()
-end
-
 function pipeline.sleep (id, msec)
-    print(id)
     local t = timer.new()
     timer.set(t, id, msec)
     timer.add(t)
     coroutine.yield()
     timer.del(t)
+end
+
+function pipeline.signal (id, signum)
+    local s = signal.new()
+    signal.set(s, id, signum)
+    signal.add(s)
+    coroutine.yield()
+    signal.del(s)
+end
+
+function pipeline.do_exit (f)
+    table.insert(exit_funs, f)
+end
+
+function pipeline.exit ()
+    for k, f in pairs(exit_funs) do
+        if type(f) == 'function' then
+            f()
+        end
+    end
+    event.exit()
 end
 
 -- event hooks
@@ -223,6 +240,11 @@ function pipeline.otimer (ev)
 end
 
 function pipeline.osignal (ev)
+    local id
+    id, _ = signal.get(ev)
+    local table = events[id]
+
+    coroutine.resume(table['co'], id)
 end
 
 return pipeline

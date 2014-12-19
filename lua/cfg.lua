@@ -1,16 +1,22 @@
 -- cfg.lua
+local function script_path ()
+    local str = debug.getinfo(2, "S").source:sub(2)
+    return str:match("(.*/)")
+end
 
--- add custom package cpath
-package.cpath = package.cpath
--- add custom package path
-package.path = package.path .. "./lua/?.lua;./lua/filters/?.lua;./lua/schedulers/?.lua"
+local prefix = script_path()
+nspider_lua_path = prefix
+local mypath = prefix .. '?.lua;'
+mypath = mypath .. prefix .. 'filters/?.lua;'
+mypath = mypath .. prefix .. 'schedulers/?.lua;'
+mypath = mypath .. prefix .. 'tasks/?.lua;'
+
+package.path = package.path .. mypath
+-- TODO add package.cpath
 
 local pipeline = require("pipeline")
-
 function init ()
-    print('begin init...')
-    dofile('./lua/tasks/iwifi.lua')
-    print('complete init...')
+    require('foreman')
 end
 
 

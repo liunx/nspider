@@ -1,7 +1,7 @@
 -- 
 -- task for iwifi
 --
-pipeline = require('pipeline')
+local pipeline = require('pipeline')
 
 local function iwifi_wait (id)
     print('iwifi_wait begin...')
@@ -42,7 +42,24 @@ local function iwifi_heartbeat2 (id)
     end
 end
 
-pipeline.listen('0.0.0.0', 8080, iwifi_wait)
-pipeline.coroutine(iwifi_heartbeat)
-pipeline.coroutine(iwifi_heartbeat2)
+local function iwifi_signal (id)
+    while true do
+        pipeline.signal(id, 10)
+        print('get signal...')
+    end
+end
 
+local function iwifi_exit ()
+    print('iwifi exiting...')
+end
+
+local function init ()
+    pipeline.do_exit(iwifi_exit)
+    pipeline.listen('0.0.0.0', 8080, iwifi_wait)
+    pipeline.coroutine(iwifi_heartbeat)
+    pipeline.coroutine(iwifi_heartbeat2)
+    pipeline.coroutine(iwifi_signal)
+end
+
+-- start
+init()
