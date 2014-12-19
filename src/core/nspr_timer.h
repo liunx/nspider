@@ -11,7 +11,7 @@ struct nspr_event_timer_s {
     int index;
     unsigned long timer;
     unsigned long delta;
-    unsigned int id;
+    unsigned long id;
     void (*handler)(struct nspr_event_timer_s *);
 };
 

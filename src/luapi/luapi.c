@@ -391,15 +391,17 @@ static int nspr_luapi_timer_api_new(lua_State *L) {
 static int nspr_luapi_timer_api_set(lua_State *L) {
     nspr_event_timer_t *t;
     t = (nspr_event_timer_t *)lua_touserdata(L, 1);
-    unsigned long timer = (unsigned long) lua_tonumber(L, 2);
+    unsigned long id = (unsigned long) lua_tonumber(L, 2);
+    unsigned long timer = (unsigned long) lua_tonumber(L, 3);
     t->timer = timer;
+    t->id = id;
     return 1;
 }
 
 static int nspr_luapi_timer_api_get(lua_State *L) {
     nspr_event_timer_t *t;
     t = (nspr_event_timer_t *)lua_touserdata(L, 1);
-    lua_pushnumber(L, t->timer);
+    lua_pushnumber(L, t->id);
     return 1;
 }
 
@@ -413,7 +415,7 @@ static int nspr_luapi_timer_api_add(lua_State *L) {
 
 static int nspr_luapi_timer_api_del(lua_State *L) {
     nspr_event_timer_t *t;
-    t = (nspr_event_timer_t *)lua_topointer(L, 1);
+    t = (nspr_event_timer_t *)lua_touserdata(L, 1);
     nspr_event_del_timer(t);
     return 1;
 }

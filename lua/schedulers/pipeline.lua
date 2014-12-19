@@ -65,6 +65,15 @@ function pipeline.wait (wtb)
     pipes[id] = table
 end
 
+-- for setting up timer, signal
+function pipeline.coroutine (fun)
+    local id = eventid_new()
+    local table = {}
+    events[id] = table
+    table['co'] = coroutine.create(fun)
+    coroutine.resume(table['co'], id)
+end
+
 function pipeline.listen (addr, port, fun)
     local fd
     local ev
@@ -162,19 +171,12 @@ function pipeline.timer ()
 end
 
 function pipeline.sleep (id, msec)
-    local newtable = {}
-    local newid = eventid_new()
-    local table = events[id]
-
-    local timer = timer.new()
-    timer.set(id, timer, 3000)
-    timer.add(timer)
+    print(id)
+    local t = timer.new()
+    timer.set(t, id, msec)
+    timer.add(t)
     coroutine.yield()
-    timer.del(timer)
-end
-
-function pipeline.yield ()
-    coroutine.yield()
+    timer.del(t)
 end
 
 -- event hooks
@@ -214,6 +216,10 @@ function pipeline.oerror (ev)
 end
 
 function pipeline.otimer (ev)
+    local id = timer.get(ev)
+    local table = events[id]
+
+    coroutine.resume(table['co'], id)
 end
 
 function pipeline.osignal (ev)
