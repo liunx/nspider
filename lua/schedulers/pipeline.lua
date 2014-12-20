@@ -19,6 +19,8 @@ local eventids = {}
 local databuf = {}
 local exit_funs = {}
 
+local address_map = {}
+
 local function eventid_new ()
     local eventid
     while true do
@@ -68,9 +70,19 @@ local function gethostbyname (id, addr)
     if ip ~= nil then
         return ip
     end
+
+    ip = address_map[addr]
+    if ip ~= nil then
+        return ip
+    end
+
     -- get ip by name
     local data = popen(id, 'ping -c 1 ' .. addr)
     ip = string.match(data, "([0-9]+.[0-9]+.[0-9]+.[0-9]+)")
+    if ip ~= nil then
+        address_map[addr] = ip
+    end
+
     return ip
 end
 
@@ -108,13 +120,41 @@ function pipeline.coroutine (fun)
     coroutine.resume(table['co'], id)
 end
 
+local function gethostbyname_b (addr)
+    -- check for ip
+    local ip = string.match(addr, "([0-9]+.[0-9]+.[0-9]+.[0-9]+)")
+    if ip ~= nil then
+        return ip
+    end
+
+    ip = address_map[addr]
+    if ip ~= nil then
+        return ip
+    end
+
+    -- get ip by name
+    local f = io.popen('ping -c 1 ' .. addr)
+    local data = f:read('*l')
+    f:close()
+    ip = string.match(data, "([0-9]+.[0-9]+.[0-9]+.[0-9]+)")
+    if ip ~= nil then
+        address_map[addr] = ip
+    end
+
+    return ip
+end
+
 function pipeline.listen (addr, port, fun)
     local fd
     local ev
     local table = {}
     local id = eventid_new()
-    print('id -- ' .. id)
-    local fd = inet.listen(addr, port)
+    local ip = gethostbyname_b(addr)
+    if ip == nil then
+        error(string.format("listen on %s:%d failed!", addr, port))
+        return nil
+    end
+    local fd = inet.listen(ip, port)
     if fd > 0 then
         ev = event.new()
         event.init(ev, fd, event.NSPR_EVENT_TYPE_READ, id)

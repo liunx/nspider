@@ -10,6 +10,7 @@ local mypath = prefix .. '?.lua;'
 mypath = mypath .. prefix .. 'filters/?.lua;'
 mypath = mypath .. prefix .. 'schedulers/?.lua;'
 mypath = mypath .. prefix .. 'tasks/?.lua;'
+mypath = mypath .. prefix .. 'configs/?.lua;'
 
 package.path = package.path .. mypath
 -- TODO add package.cpath

@@ -22,9 +22,15 @@ function http.parse (data)
     -- check http features
     local head, tail
     head, tail = string.find(data, "HTTP/1.1")
+
+    if head == nil then
+        head, tail = string.find(data, "HTTP/1.0")
+    end
+
     if head == nil then
         return nil
     end
+
     local crlf_h, crlf_t
     crlf_h, crlf_t = string.find(data, "\r\n\r\n")
     if crlf_h == nil then

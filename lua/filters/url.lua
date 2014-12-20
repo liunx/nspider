@@ -23,7 +23,7 @@ function url.create (t)
     for k, v in pairs(t) do
         url = url .. string.format("%s=%s&", k, v)
     end
-    url, _ = string.gsub(url, '&$', '')
+    url = string.sub(url, 1, #url - 1)
     return url
 end
 
