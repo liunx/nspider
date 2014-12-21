@@ -46,6 +46,10 @@ local function get_gwaddress (id)
     return '10.129.228.66'
 end
 
+local function get_gwmac (id)
+    return '601020304000'
+end
+
 local function dump (t)
     for k, v in pairs(t) do
         print(k,v)
@@ -56,17 +60,32 @@ end
 -- coroutines
 --
 local function iwifi_server (id)
+    local data = pipeline.read(id)
+    if data then
+        local t = http.parse(data)
+        if type(t) == 'table' then
+            http_response['status'] = '302 Moved Temporarily'
+            local url_l = {}
+            url_l['gw_mac'] = get_gwmac(id)
+            url_l['gw_port'] = gwinfo['gwport']
+            url_l['gw_address'] = get_gwaddress(id)
+            url_l['soft_ver'] = gwinfo['softver']
+            local url_d = url.create(url_l)
+            http_response['contents']['Location'] = (string.format("http://%s:%d/api10/register.htm?%s", www[1], www[2], url_d))
+            local rspmsg = http.create(http_response)
+            pipeline.write(id, rspmsg)
+        end
+    end
+    pipeline.close(id)
+    pipeline.complete(id)
 end
 
 local function iwifi_redirect (id)
     local data = pipeline.read(id)
-    print(data)
     if data then
         local t = http.parse(data)
-        dump(t)
         if type(t) == 'table' then
             local host = t['contents']['Host']
-            print(host)
             http_response['status'] = '302 Moved Temporarily'
             local url_l = {}
             url_l['dev_id'] = get_devid(id)
@@ -76,10 +95,8 @@ local function iwifi_redirect (id)
             url_l['gw_address'] = get_gwaddress(id)
             url_l['url'] = host
             local url_d = url.create(url_l)
-            print(url_d)
             http_response['contents']['Location'] = (string.format("http://%s:%d/api10/login?%s", portal[1], portal[2], url_d))
             local rspmsg = http.create(http_response)
-            print(rspmsg)
             pipeline.write(id, rspmsg)
         end
     end
@@ -88,6 +105,24 @@ local function iwifi_redirect (id)
 end
 
 local function iwifi_manager (id)
+    local data = pipeline.read(id)
+    if data then
+        local t = http.parse(data)
+        if type(t) == 'table' then
+            http_response['status'] = '302 Moved Temporarily'
+            local url_l = {}
+            url_l['gw_mac'] = get_gwmac(id)
+            url_l['gw_port'] = gwinfo['gwport']
+            url_l['gw_address'] = get_gwaddress(id)
+            url_l['soft_ver'] = gwinfo['softver']
+            local url_d = url.create(url_l)
+            http_response['contents']['Location'] = (string.format("http://%s:%d/api10/register.htm?%s", www[1], www[2], url_d))
+            local rspmsg = http.create(http_response)
+            pipeline.write(id, rspmsg)
+        end
+    end
+    pipeline.close(id)
+    pipeline.complete(id)
 end
 
 local function iwifi_wificli (id)

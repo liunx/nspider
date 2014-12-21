@@ -49,10 +49,8 @@ function http.parse (data)
     t['version'] = 'HTTP/1.1'
 
     if msgtype == 'REQUEST' then
-        print(msghead)
         local head_1 = head
         head, tail = string.find(msghead, " ")
-        print(head, tail)
         local tail_2 = tail
 
         local method = string.sub(msghead, 1, head - 1)
