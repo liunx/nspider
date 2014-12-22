@@ -1,8 +1,8 @@
 listen = {
-    { 'localhost', 2060, 'SERVER' },
-    { 'localhost', 2061, 'REDIRECT' },
-    { 'localhost', 2062, 'MANAGER' },
-    { 'localhost', 9527, 'WIFICLI' },
+    { '0.0.0.0', 2060, 'SERVER' },
+    { '0.0.0.0', 2061, 'REDIRECT' },
+    { '0.0.0.0', 2062, 'MANAGER' },
+    { '0.0.0.0', 9527, 'WIFICLI' },
 }
 
 gwinfo = {
@@ -10,9 +10,9 @@ gwinfo = {
     gwport = 2060,
     softver = '1.0.0',
     hardver = '1.0.0',
-    gwheartbeat = 60,
-    cliheartbeat = 60,
-    cliexpire = 60,
+    gwheartbeat = 6,
+    cliheartbeat = 6,
+    cliexpire = 6,
 }
 
 
