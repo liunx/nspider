@@ -1,5 +1,5 @@
 -- 
--- task for iwifi
+-- task for tests
 --
 local pipeline = require('pipeline')
 
@@ -9,8 +9,8 @@ local function getgwaddr (id)
     return val
 end
 
-local function iwifi_wait (id)
-    print('iwifi_wait begin...')
+local function tests_wait (id)
+    print('tests_wait begin...')
     local data = pipeline.read(id)
     pipeline.sleep(id, 3000)
     pipeline.write(id, data)
@@ -29,10 +29,10 @@ local function iwifi_wait (id)
 
     pipeline.close(id)
     pipeline.complete(id)
-    print('iwifi_wait end...')
+    print('tests_wait end...')
 end
 
-local function iwifi_heartbeat (id)
+local function tests_heartbeat (id)
     local addr
     for i = 1,100 do
         pipeline.sleep(id, 1000)
@@ -41,39 +41,52 @@ local function iwifi_heartbeat (id)
     end
 end
 
-local function iwifi_heartbeat2 (id)
+local function tests_heartbeat2 (id)
     for i = 1,100 do
         pipeline.sleep(id, 2000)
         print('sleep...' .. i)
     end
 end
 
-local function iwifi_signal (id)
+local function tests_signal (id)
     while true do
         pipeline.signal(id, 10)
         print('get signal...')
     end
 end
 
-local function iwifi_popen (id)
+local function tests_popen (id)
     local data = pipeline.popen(id, 'echo hello')
     print(data)
     data = pipeline.popen(id, 'ping -c 1 www.baidu.com')
     print(data)
 end
 
-local function iwifi_exit ()
-    print('iwifi exiting...')
+local function tests_listen (id)
+    local data = pipeline.read(id)
+
+    if string.match(data, 'getpeername') then
+        print(pipeline.getpeername(id))
+    elseif string.match(data, 'getsockname') then
+        print(pipeline.getsockname(id))
+    end
+
+    pipeline.close(id)
+    pipeline.complete(id)
+end
+
+local function tests_exit ()
+    print('tests exiting...')
 end
 
 local function init ()
-    pipeline.do_exit(iwifi_exit)
+    pipeline.do_exit(tests_exit)
+    pipeline.listen('0.0.0.0', 8080, tests_listen)
     --[[
-    pipeline.listen('0.0.0.0', 8080, iwifi_wait)
-    pipeline.coroutine(iwifi_heartbeat)
-    --pipeline.coroutine(iwifi_heartbeat2)
-    pipeline.coroutine(iwifi_signal)
-    pipeline.coroutine(iwifi_popen)
+    pipeline.coroutine(tests_heartbeat)
+    --pipeline.coroutine(tests_heartbeat2)
+    pipeline.coroutine(tests_signal)
+    pipeline.coroutine(tests_popen)
     --]]
 end
 

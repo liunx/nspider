@@ -63,7 +63,6 @@ local function popen (id, cmd)
     return data
 end
 
-
 local function gethostbyname (id, addr)
     -- check for ip
     local ip = string.match(addr, "([0-9]+.[0-9]+.[0-9]+.[0-9]+)")
@@ -89,26 +88,6 @@ end
 -- user interfaces
 function pipeline.popen (id, cmd)
     return popen(id, cmd)
-end
-
-function pipeline.wait (wtb)
-    local fd
-    local ev
-    local table = {}
-    local id = uuid()
-
-    if wtb['type'] == 'tcp' then
-        local fd = inet.listen(wtb['addr'], wtb['port'])
-        if fd > 0 then
-            ev = event.new()
-            events[fd] = id
-            event.init(ev, fd, event.NSPR_EVENT_TYPE_READ)
-            event.add(ev, event.NSPR_EVENT_TYPE_READ)
-        end
-    end
-    table['handler'] = wtb['handler']
-    table['listen'] = true
-    pipes[id] = table
 end
 
 -- for setting up timer, signal
@@ -223,19 +202,16 @@ function pipeline.connect (id, addr, port)
     return nil
 end
 
-function pipeline.request (rtb)
-end
-
-function pipeline.response (id, data)
+function pipeline.getpeername (id)
     local table = events[id]
     local fd = table['fd']
-    file.write(fd, data, string.len(data))
+    return inet.getpeername(fd)
 end
 
-function pipeline.forward (ftb)
-end
-
-function pipeline.backward (btb)
+function pipeline.getsockname (id)
+    local table = events[id]
+    local fd = table['fd']
+    return inet.getsockname(fd)
 end
 
 function pipeline.complete (id)

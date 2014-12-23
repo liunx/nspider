@@ -95,3 +95,29 @@ int nspr_get_connect_status(const int fd)
         return NSPR_ERROR;
     }
 }
+
+int nspr_get_peer_name(const int fd, char *addr, int *port)
+{
+    struct sockaddr_in peer;
+    socklen_t peer_len = sizeof(peer);
+    if (getpeername(fd, (struct sockaddr *) &peer, &peer_len) < 0) {
+        return NSPR_ERROR;
+    } else {
+        strcpy(addr, inet_ntoa(peer.sin_addr));
+        *port = ntohs(peer.sin_port);
+    }
+    return NSPR_OK;
+}
+
+int nspr_get_socket_name(const int fd, char *addr, int *port)
+{
+    struct sockaddr_in local;
+    socklen_t local_len = sizeof(local);
+    if (getsockname(fd, (struct sockaddr*) &local, &local_len) < 0) {
+        return NSPR_ERROR;
+    } else {
+        strcpy(addr, inet_ntoa(local.sin_addr));
+        *port = ntohs(local.sin_port);
+    }
+    return NSPR_OK;
+}

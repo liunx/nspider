@@ -292,6 +292,36 @@ static int nspr_luapi_inet_api_connect(lua_State *L) {
     return 1;
 }
 
+static int nspr_luapi_inet_api_getpeername(lua_State *L) {
+    char addr[32] = {0};
+    int port;
+    int fd = lua_tonumber(L, 1);
+    if (nspr_get_peer_name(fd, addr, &port) != NSPR_OK) {
+        lua_pushnil(L);
+        lua_pushstring(L, "getpeername failed!");
+    }
+    else {
+        lua_pushstring(L, addr); 
+        lua_pushnumber(L, port);
+    }
+    return 2;
+}
+
+static int nspr_luapi_inet_api_getsockname(lua_State *L) {
+    char addr[32] = {0};
+    int port;
+    int fd = lua_tonumber(L, 1);
+    if (nspr_get_socket_name(fd, addr, &port) != NSPR_OK) {
+        lua_pushnil(L);
+        lua_pushstring(L, "getsockname failed!");
+    }
+    else {
+        lua_pushstring(L, addr); 
+        lua_pushnumber(L, port);
+    }
+    return 2;
+}
+
 static void nspr_luapi_inet_api(lua_State *L) {
     lua_pushliteral(L, "inet");
     lua_newtable(L);    /*  .inet table aka {} */
@@ -302,6 +332,10 @@ static void nspr_luapi_inet_api(lua_State *L) {
     lua_setfield(L, -2, "accept");
     lua_pushcfunction(L, nspr_luapi_inet_api_connect);
     lua_setfield(L, -2, "connect");
+    lua_pushcfunction(L, nspr_luapi_inet_api_getpeername);
+    lua_setfield(L, -2, "getpeername");
+    lua_pushcfunction(L, nspr_luapi_inet_api_getsockname);
+    lua_setfield(L, -2, "getsockname");
 
     lua_createtable(L, 0 /* narr */, 2 /* nrec */);    /*  the metatable */
     lua_setmetatable(L, -2);    /*  tie the metatable to param table */
