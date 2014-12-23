@@ -1,0 +1,25 @@
+#!/usr/bin/env perl 
+# 
+# configure -- perl implement
+#
+
+use strict;
+use warnings;
+use utf8;
+use Getopt::Long;
+
+# the basic options
+my $help = 0;
+GetOptions(
+    'help' => \$help,
+);
+
+if ($help == 1) {
+print<<EOF
+--help                                  print this message
+--with-cc-path=PATH                     set cc compiler path            
+--with-cc-opt=OPTIONS                   set cc compiler flags
+--with-ld-opt=OPTIONS                   set ld linker flags
+EOF
+}
+
