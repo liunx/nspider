@@ -16,8 +16,8 @@ use IPC::Cmd qw[can_run run run_forked];
 my $help = 0;
 my $debug = 0;
 my $cc_path = undef;
-my $cc_opt = "";
-my $ld_opt = "";
+my $cc_opt = undef;
+my $ld_opt = undef;
 my $lua_static = 0;
 my $lua_version = "lua5.2";
 my $lua_inc_path = undef;
@@ -160,25 +160,18 @@ sub check_cc_arch {
 sub check_lua_env {
     my $tmp = 'lua_tmp';
     print STDOUT "Checking lua environmental ... \n";
-    if (!defined $lua_inc_path) {
-        print STDOUT "You must define --with-lua-inc-path!\n";
-        exit(0);
-    }
-
-    if (!defined $lua_lib_path) {
-        print STDOUT "You must define --with-lua-lib-path!\n";
-        exit(0);
-    }
     # find libluaxxx.so.xx
-    my @paths;
-    push(@paths, $lua_lib_path);
-    find(sub {
-            if ($_ =~ /liblua[\d.]*.so$/) {
-                $_ =~ s/(lib)(lua[\d.]*)(.so)/$2/g;
-                $lua_version = $_;
-            }
-        },
-		@paths);
+	if (defined $lua_lib_path) {
+		my @paths;
+		push(@paths, $lua_lib_path);
+		find(sub {
+				if ($_ =~ /liblua[\d.]*.so$/) {
+					$_ =~ s/(lib)(lua[\d.]*)(.so)/$2/g;
+					$lua_version = $_;
+				}
+			},
+			@paths);
+	}
     make_path($tmp);
     open FH, "> $tmp/lua_test.c" or die $!;
     print FH <<EOF;
@@ -213,7 +206,14 @@ int main(void)
 
 EOF
     # see whether we can compile it!
-    my $cmd = "$cc $tmp/lua_test.c -o $tmp/a.out -I$lua_inc_path -L$lua_lib_path -l$lua_version -ldl -lm";
+	my $cmd = "$cc $tmp/lua_test.c -o $tmp/a.out";
+	if (defined $lua_inc_path) {
+		$cmd = $cmd . " -I$lua_inc_path";
+	}
+	if (defined $lua_lib_path) {
+		$cmd = $cmd . " -L$lua_lib_path";
+	}
+	$cmd = $cmd . " -l$lua_version -ldl -lm";
     my $buffer;
     if (scalar run(
             command => $cmd,
@@ -249,13 +249,24 @@ sub gen_objs_dir {
 sub gen_makefile {
     open FH, "> objs/Makefile" or die $!;
     print FH "CC = $cc\n";
+	if (!defined $cc_opt) {
+		$cc_opt = "";
+	}
+	if (!defined $ld_opt) {
+		$ld_opt = "";
+	}
     if ($debug == 1) {
         print FH "CFLAGS = $ccflags{$arch} $cc_opt -g\n";
     }
     else {
         print FH "CFLAGS = $ccflags{$arch} $cc_opt -Os\n";
     }
-    print FH "LDFLAGS = -L$lua_lib_path $ld_opt -l$lua_version -ldl -lm\n";
+	if (defined $lua_lib_path) {
+		print FH "LDFLAGS = -L$lua_lib_path $ld_opt -l$lua_version -ldl -lm\n";
+	}
+	else {
+		print FH "LDFLAGS = $ld_opt -l$lua_version -ldl -lm\n";
+	}
     print FH "LINK = \$(CC)\n\n";
     print FH "ALL_INCS = \\\n";
     for my $i (@all_incs) {
@@ -268,7 +279,9 @@ sub gen_makefile {
     }
     print FH "\n\n";
     print FH "CORE_INCS = \\\n";
-    push @core_incs, "$lua_inc_path";
+	if (defined $lua_inc_path) {
+		push @core_incs, "$lua_inc_path";
+	}
     for my $i (@core_incs) {
         print FH "\t-I $i \\\n";
     }
