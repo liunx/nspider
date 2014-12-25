@@ -19,7 +19,7 @@ my $cc_path = undef;
 my $cc_opt = "";
 my $ld_opt = "";
 my $lua_static = 0;
-my $lua_version = "lua";
+my $lua_version = "lua5.2";
 my $lua_inc_path = undef;
 my $lua_lib_path = undef;
 
@@ -47,10 +47,6 @@ my @all_incs = (
     'src/event',
     'src/os',
     'src/common',
-    'src/thirdparts/list/src',
-    'src/thirdparts/http-parser',
-    'src/thirdparts/hash',
-    'src/thirdparts/json',
     'src/luapi',
     'objs',
 );
@@ -75,10 +71,6 @@ my @core_incs = (
     'src/event',
     'src/os',
     'src/common',
-    'src/thirdparts/list/src',
-    'src/thirdparts/http-parser',
-    'src/thirdparts/hash',
-    'src/thirdparts/json',
     'src/luapi',
     'objs',
 );
@@ -225,7 +217,7 @@ EOF
     my $buffer;
     if (scalar run(
             command => $cmd,
-            verbose => 0,
+            verbose => 1,
             buffer => \$buffer,
             timeout => 20)
     ) {
