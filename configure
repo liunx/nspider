@@ -7,19 +7,392 @@ use strict;
 use warnings;
 use utf8;
 use Getopt::Long;
+use File::Find;
+use File::Basename;
+use File::Path qw(make_path remove_tree);
+use IPC::Cmd qw[can_run run run_forked];
 
-# the basic options
+# the options vars
 my $help = 0;
-GetOptions(
-    'help' => \$help,
+my $debug = 0;
+my $cc_path = undef;
+my $cc_opt = "";
+my $ld_opt = "";
+my $lua_static = 0;
+my $lua_version = "lua";
+my $lua_inc_path = undef;
+my $lua_lib_path = undef;
+
+# globals options
+
+# compiler
+my $cc = "gcc";
+my $ld = "ld";
+my $arch = "x86_64";
+
+my %ccflags = (
+    x86_64	=> "-pipe -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror",
+    i386    => "-pipe -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror",
+    mips	=> "-pipe -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror",
 );
 
-if ($help == 1) {
-print<<EOF
---help                                  print this message
---with-cc-path=PATH                     set cc compiler path            
---with-cc-opt=OPTIONS                   set cc compiler flags
---with-ld-opt=OPTIONS                   set ld linker flags
+my %ldflags = (
+	x86_64	=> "",
+	i386	=> "",
+	mips 	=> "",
+);
+
+my @all_incs = (
+    'src/core',
+    'src/event',
+    'src/os',
+    'src/common',
+    'src/thirdparts/list/src',
+    'src/thirdparts/http-parser',
+    'src/thirdparts/hash',
+    'src/thirdparts/json',
+    'src/luapi',
+    'objs',
+);
+
+my @core_deps = (
+    'src/core/nspider.h',
+    'src/core/nspr_log.h',
+    'src/core/nspr_mem.h',
+    'src/core/nspr_inet.h',
+    'src/core/nspr_file.h',
+    'src/core/nspr_timer.h',
+    'src/core/nspr_signal.h',
+    'src/event/nspr_event.h',
+    'src/os/nspr_linux.h',
+    'src/common/nspr_common.h',
+    'src/luapi/luapi.h',
+    'objs/nspider_config.h',
+);
+
+my @core_incs = (
+    'src/core',
+    'src/event',
+    'src/os',
+    'src/common',
+    'src/thirdparts/list/src',
+    'src/thirdparts/http-parser',
+    'src/thirdparts/hash',
+    'src/thirdparts/json',
+    'src/luapi',
+    'objs',
+);
+
+my @objs = (
+    'objs/src/core/nspider.o',
+    'objs/src/core/nspr_log.o',
+    'objs/src/core/nspr_mem.o',
+    'objs/src/core/nspr_inet.o',
+    'objs/src/core/nspr_file.o',
+    'objs/src/core/nspr_timer.o',
+    'objs/src/core/nspr_signal.o',
+    'objs/src/event/nspr_event.o',
+    'objs/src/event/modules/nspr_select.o',
+    'objs/src/luapi/luapi.o',
+    'objs/nspr_modules.o',
+);
+
+# the finalize bin name
+my $bin = "objs/nspider";
+
+my %options = (
+    'help'                      => \$help,
+    'debug'                     => \$debug,
+    'with-cc-path=s'            => \$cc_path,
+    'with-cc-opt=s'             => \$cc_opt,
+    'with-ld-opt=s'             => \$ld_opt,
+    'with-lua-static-compile'   => \$lua_static,
+    'with-lua-inc-path=s'       => \$lua_inc_path,
+    'with-lua-lib-path=s'       => \$lua_lib_path,
+);
+
+# subroutines
+sub get_cc_fullname {
+    my $cc;
+	my @paths;
+    my $path = shift;
+	push(@paths, $path);
+
+    find(sub {
+            if ($_ =~ /gcc$/) {
+                $cc = $File::Find::name;
+            }
+        },
+		@paths);
+    return $cc;
+}
+
+sub check_cc_work {
+    my $cc = shift;
+    if (can_run($cc)) {
+        print STDOUT "OK!\n";
+    }
+    else {
+        print STDOUT "Failed!\n";
+        exit(0);
+    }
+}
+
+sub check_cc_arch {
+    my $cc = shift;
+    my $cmd = "$cc -v";
+    my $buffer;
+
+    if (scalar run(
+            command => $cmd,
+            verbose => 0,
+            buffer => \$buffer,
+            timeout => 20)
+    ) {
+        $buffer =~ s/(.*)(Target: )([\w-]*)(.*)/$3/s;
+        $arch = $buffer;
+        $arch =~ s/([\w]+)(.*)/$1/s;
+        if (!defined $ccflags{$arch}) {
+            print STDOUT "$buffer not support!\n";
+            exit(0);
+        }
+        print "$buffer\n";
+
+    }
+    else {
+        print STDOUT "failed\n";
+        exit(0);
+    }
+}
+
+sub check_lua_env {
+    my $tmp = 'lua_tmp';
+    print STDOUT "Checking lua environmental ... \n";
+    if (!defined $lua_inc_path) {
+        print STDOUT "You must define --with-lua-inc-path!\n";
+        exit(0);
+    }
+
+    if (!defined $lua_lib_path) {
+        print STDOUT "You must define --with-lua-lib-path!\n";
+        exit(0);
+    }
+    # find libluaxxx.so.xx
+    my @paths;
+    push(@paths, $lua_lib_path);
+    find(sub {
+            if ($_ =~ /liblua[\d.]*.so$/) {
+                $_ =~ s/(lib)(lua[\d.]*)(.so)/$2/g;
+                $lua_version = $_;
+            }
+        },
+		@paths);
+    make_path($tmp);
+    open FH, "> $tmp/lua_test.c" or die $!;
+    print FH <<EOF;
+#include <lua.h>                                /* Always include this when calling Lua */
+#include <lauxlib.h>                            /* Always include this when calling Lua */
+#include <lualib.h>                             /* Always include this when calling Lua */
+
+#include <stdlib.h>                             /* For function exit() */
+#include <stdio.h>                              /* For input/output */
+
+void bail(lua_State *L, char *msg){
+	exit(1);
+}
+
+int main(void)
+{
+	lua_State *L;
+
+	L = luaL_newstate();                        /* Create Lua state variable */
+	luaL_openlibs(L);                           /* Load Lua libraries */
+
+	if (luaL_loadfile(L, "helloscript.lua"))    /* Load but don't run the Lua script */
+		bail(L, "luaL_loadfile() failed");      /* Error out if file can't be read */
+
+	if (lua_pcall(L, 0, 0, 0))                  /* Run the loaded Lua script */
+		bail(L, "lua_pcall() failed");          /* Error out if Lua file has an error */
+
+	lua_close(L);                               /* Clean up, free the Lua state var */
+
+	return 0;
+}
+
+EOF
+    # see whether we can compile it!
+    my $cmd = "$cc $tmp/lua_test.c -o $tmp/a.out -I$lua_inc_path -L$lua_lib_path -l$lua_version -ldl -lm";
+    my $buffer;
+    if (scalar run(
+            command => $cmd,
+            verbose => 0,
+            buffer => \$buffer,
+            timeout => 20)
+    ) {
+        if (defined $buffer) {
+            print STDOUT "$buffer\n";
+            exit(0);
+        }
+        else {
+            print STDOUT "lua environmental is OK!\n";
+        }
+    }
+    else {
+        print STDOUT "checking lua environmental failed!\n";
+        exit(0);
+    }
+    remove_tree($tmp);
+}
+
+sub gen_objs_dir {
+    print STDOUT "Generating objs path ... ";
+    my $dir;
+    foreach my $i (@objs) {
+        $dir = dirname($i);
+        make_path($dir);
+    }
+    print STDOUT "OK!\n";
+}
+
+sub gen_makefile {
+    open FH, "> objs/Makefile" or die $!;
+    print FH "CC = $cc\n";
+    if ($debug == 1) {
+        print FH "CFLAGS = $ccflags{$arch} $cc_opt -g\n";
+    }
+    else {
+        print FH "CFLAGS = $ccflags{$arch} $cc_opt -Os\n";
+    }
+    print FH "LDFLAGS = -L$lua_lib_path $ld_opt -l$lua_version -ldl -lm\n";
+    print FH "LINK = \$(CC)\n\n";
+    print FH "ALL_INCS = \\\n";
+    for my $i (@all_incs) {
+        print FH "\t-I $i \\\n";
+    }
+    print FH "\n\n";
+    print FH "CORE_DEPS = \\\n";
+    for my $i (@core_deps) {
+        print FH "\t$i \\\n";
+    }
+    print FH "\n\n";
+    print FH "CORE_INCS = \\\n";
+    push @core_incs, "$lua_inc_path";
+    for my $i (@core_incs) {
+        print FH "\t-I $i \\\n";
+    }
+    print FH "\n\n";
+    print FH "OBJS = \\\n";
+    for my $i (@objs) {
+        print FH "\t$i \\\n";
+    }
+    print FH "\n\n";
+    print FH "$bin: \$(OBJS)\n";
+    print FH "\t\$(LINK) -o $bin \$(OBJS) \$(LDFLAGS)\n";
+    print FH "\n\n";
+    my ($source, $tmp);
+    for my $i (@objs) {
+        $tmp = $i;
+        # nspr_modules auto generate
+        if ($i =~ /nspr_modules/) {
+            $i =~ s/(.*)(.o)/$1.c/g;
+        }
+        else {
+            $i =~ s/(objs\/)(.*)(.o)/$2.c/g;
+        }
+        $source = $i;
+        print FH "$tmp: \$(CORE_DEPS) $source\n";
+        print FH "\t\$(CC) -c \$(CFLAGS) \$(CORE_INCS) -o $tmp $source\n\n";
+    }
+
+    close(FH);
+    open FH, "> Makefile" or die $!;
+    print FH <<EOF;
+default: build
+
+clean:
+	rm -rf objs
+build:
+	\$(MAKE) -f objs/Makefile
 EOF
 }
 
+sub gen_config {
+    open FH, "> objs/nspider_config.h" or die $!;
+    print FH <<EOF;
+#ifndef _NSPIDER_CONFIG_H_INCLUDED_
+#define _NSPIDER_CONFIG_H_INCLUDED_
+
+#ifndef NSPR_HAVE_OS_LINUX
+#define NSPR_HAVE_OS_LINUX  1
+#endif
+
+#ifndef NSPR_EVENT_FDS_SIZE
+#define NSPR_EVENT_FDS_SIZE  1024
+#endif
+
+#ifndef NSPR_HAVE_DEBUG
+#define NSPR_HAVE_DEBUG 1
+#endif
+
+#endif /* _NSPIDER_CONFIG_H_INCLUDED_ */
+EOF
+}
+
+sub gen_modules {
+    open FH, "> objs/nspr_modules.c" or die $!;
+    print FH <<EOF;
+#include <nspider.h>
+extern nspr_nspider_t nspr_log;
+extern nspr_nspider_t nspr_event;
+extern nspr_nspider_t nspr_luapi;
+
+nspr_nspider_t *nspr_nspider_modules[] = {
+    &nspr_log,
+    &nspr_event,
+    &nspr_luapi,
+    NULL,
+};
+EOF
+}
+
+#
+# XXX MAIN XXX
+#
+GetOptions(%options) or die "see ./configure --help for help!\n";
+
+if ($help == 1) {
+print<<EOF;
+--help                                  print this message
+--debug                                 enable debug options
+--with-cc-path=PATH                     set cc compiler path            
+--with-cc-opt=OPTIONS                   set cc compiler flags
+--with-ld-opt=OPTIONS                   set ld linker flags
+--with-lua-static-compile               static compile lua library (default shared)
+--with-lua-inc-path=PATH                set lua include files path
+--with-lua-lib-path=PATH                set lua library files path
+EOF
+
+exit(0);
+}
+
+# compile env checking
+print STDOUT "Checking compiler environmental ...\n";
+if (defined $cc_path) {
+	$cc = get_cc_fullname($cc_path);
+}
+print STDOUT "CC is $cc ...\n";
+print STDOUT "Checking CC is work ...";
+check_cc_work($cc);
+print STDOUT "Checking object ARCH ... ";
+check_cc_arch($cc);
+print STDOUT "CC flags is ... $cc_opt $ccflags{$arch}\n";
+check_lua_env();
+# TODO check all files we need!
+
+# XXX the final stage XXX
+# generate Makefiles and auto configure files
+#
+gen_objs_dir();
+gen_config();
+gen_modules();
+gen_makefile();
