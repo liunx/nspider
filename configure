@@ -303,6 +303,7 @@ default: build
 
 clean:
 	rm -rf objs
+	rm Makefile
 build:
 	\$(MAKE) -f objs/Makefile
 EOF
