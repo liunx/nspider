@@ -127,6 +127,7 @@ int nspr_get_iface_info(const char *iface, char *info)
     int fd;
     int ret = NSPR_OK;
     int count;
+    int offset = 0;
     struct ifreq ifr;
     unsigned char *mac = NULL;
 
@@ -139,12 +140,28 @@ int nspr_get_iface_info(const char *iface, char *info)
         goto failed;
     }
     mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
-    count = sprintf(info, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X,", mac[0], mac[1], 
-            mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
+    count = sprintf(info + offset, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X,", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    offset += count;
+
+    if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
+        ret = NSPR_ERROR;
+        goto failed;
+    }
+    count = sprintf(info + offset, "%s,", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+    offset += count;
+
     if (ioctl(fd, SIOCGIFBRDADDR, &ifr) < 0) {
         ret = NSPR_ERROR;
         goto failed;
     }
+    count = sprintf(info + offset, "%s,", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+    offset += count;
+
+    if (ioctl(fd, SIOCGIFNETMASK, &ifr) < 0) {
+        ret = NSPR_ERROR;
+        goto failed;
+    }
+    count = sprintf(info + offset, "%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
 
 failed:
     close(fd);

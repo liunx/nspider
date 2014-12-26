@@ -322,6 +322,18 @@ static int nspr_luapi_inet_api_getsockname(lua_State *L) {
     return 2;
 }
 
+static int nspr_luapi_inet_api_getifaceinfo(lua_State *L) {
+    char info[128] = {0};
+    const char *ifname = lua_tostring(L, 1);
+    if (nspr_get_iface_info(ifname, info) != NSPR_OK) {
+        lua_pushnil(L);
+    }
+    else {
+        lua_pushstring(L, info); 
+    }
+    return 1;
+}
+
 static void nspr_luapi_inet_api(lua_State *L) {
     lua_pushliteral(L, "inet");
     lua_newtable(L);    /*  .inet table aka {} */
@@ -336,6 +348,8 @@ static void nspr_luapi_inet_api(lua_State *L) {
     lua_setfield(L, -2, "getpeername");
     lua_pushcfunction(L, nspr_luapi_inet_api_getsockname);
     lua_setfield(L, -2, "getsockname");
+    lua_pushcfunction(L, nspr_luapi_inet_api_getifaceinfo);
+    lua_setfield(L, -2, "getifaceinfo");
 
     lua_createtable(L, 0 /* narr */, 2 /* nrec */);    /*  the metatable */
     lua_setmetatable(L, -2);    /*  tie the metatable to param table */

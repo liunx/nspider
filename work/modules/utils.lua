@@ -15,7 +15,7 @@ function utils.tprint (tbl, indent)
     end
 end
 
-function utils.get_default_gw ()
+function utils.get_default_route ()
     local found = 0
     local gwinfo = {
         gwaddr = nil,
@@ -54,9 +54,20 @@ function utils.get_default_gw ()
         f = io.open('/sys/class/net/' .. gwinfo['iface'] .. '/address', 'r')
         gwinfo['mac'] = f:read('*l')
         f:close()
-        print(gwinfo['mac'])
     end
+    local data = nspr.inet.getifaceinfo(t[1])
+    if data ~= nil then
+        i = 1
+        for w in string.gmatch(data, "[^,]+") do
+            t[i] = w
+            i = i + 1
+        end
+        gwinfo['inet_addr'] = t[2]
+        gwinfo['bcast'] = t[3]
+        gwinfo['mask'] = t[4]
+    end
+
+    return gwinfo
 end
 
-utils.get_default_gw()
 return utils

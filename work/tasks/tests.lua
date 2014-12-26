@@ -2,6 +2,7 @@
 -- task for tests
 --
 local pipeline = require('pipeline')
+local utils = require('utils')
 
 local function getgwaddr (id)
     local addr = pipeline.popen(id, 'IF=`route -n | grep -m 1 "^0.0.0.0" | awk \'{ print $8 }\'`;ifconfig $IF |grep "inet addr:" | sed \'s/\\(^.*\\)addr:\\(.*\\) Bcast\\(.*\\)/\\2/g\'')
@@ -69,6 +70,9 @@ local function tests_listen (id)
         print(pipeline.getpeername(id))
     elseif string.match(data, 'getsockname') then
         print(pipeline.getsockname(id))
+    elseif string.match(data, 'getifaceinfo') then
+        local t = utils.get_default_route()
+        utils.tprint(t, 0)
     end
 
     pipeline.close(id)
