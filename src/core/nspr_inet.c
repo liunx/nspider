@@ -121,3 +121,33 @@ int nspr_get_socket_name(const int fd, char *addr, int *port)
     }
     return NSPR_OK;
 }
+
+int nspr_get_iface_info(const char *iface, char *info)
+{
+    int fd;
+    int ret = NSPR_OK;
+    int count;
+    struct ifreq ifr;
+    unsigned char *mac = NULL;
+
+    memset(&ifr, 0, sizeof(ifr));
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    ifr.ifr_addr.sa_family = AF_INET;
+    strncpy(ifr.ifr_name, iface, IFNAMSIZ - 1);
+    if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) {
+        ret = NSPR_ERROR;
+        goto failed;
+    }
+    mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+    count = sprintf(info, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X,", mac[0], mac[1], 
+            mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
+    if (ioctl(fd, SIOCGIFBRDADDR, &ifr) < 0) {
+        ret = NSPR_ERROR;
+        goto failed;
+    }
+
+failed:
+    close(fd);
+    return ret;
+}
+
