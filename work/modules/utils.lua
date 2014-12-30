@@ -33,7 +33,7 @@ function utils.get_default_route ()
     local i
     for line in f:lines() do
         i = 1
-        for w in string.gmatch(line, "[%a%d]+") do
+        for w in string.gmatch(line, "[%a%d.-]+") do
             t[i] = w
             i = i + 1
         end

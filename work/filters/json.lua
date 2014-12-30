@@ -257,7 +257,7 @@ do
 	local strchars = "" -- all valid string characters (all except newlines)
 	local allchars = "" -- all characters that are valid in comments
 	--local escapechar = {}
-	for i=0,0xff do 
+	for i=0,255 do 
 		local c = string.char(i)
 		if c~="\n" and c~="\r" then strchars = strchars .. c end
 		allchars = allchars .. c
